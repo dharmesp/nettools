@@ -53,7 +53,13 @@ Click **Start**, then **Shut Down**. Or just close the window.
 - **Desktop icons**: right-click a shortcut, choose *Add to desktop*, then drag it wherever you like.
 - **Drag and drop** a shortcut onto another category, or right-click and choose *Move to category...*.
 - **Two themes**: Windows XP (Luna) and Windows 98 menu on a Windows 8 desktop. Switch any time.
-- **Backup / Restore / Factory reset**: export everything to a ZIP, restore it later, or wipe it all.
+- **Notes**: a compact to-do list on the right of the desktop. Each note has a status (To do, In progress, Waiting, Done)
+  and opens in its own small window with a log, so you can keep track of what you did and when.
+- **Desktop clock**: time with AM/PM, the day, and the date (like `Thursday, 29-Oct-2026`), from your PC's own clock.
+- **Your own background**: pick a picture in *Settings > Change background...* (PNG, JPG, GIF or WEBP, up to 15 MB).
+- **Windows-style pop-up forms**: drag them by the title bar, close them with the red or grey close button.
+- **Backup / Restore / Factory reset**: export everything (shortcuts, categories, icons, background and notes) to a ZIP,
+  restore it later, or wipe it all.
 - **Shut Down** from the menu, or just close the window: the server stops itself.
 
 ## Requirements
@@ -71,11 +77,12 @@ look in `data\server.log`.
 `sample-data\network-engineer-starter.zip` contains about 320 hand-picked shortcuts in 20 categories (search engines,
 AI tools, vendor knowledge bases, network lookup tools, diagramming, labs and more).
 Restore it from the Start menu: **Restore (ZIP)...** (XP) or **Settings > Restore from ZIP...** (Windows 98 + 8).
-Restoring *replaces* what you have, so make a backup first.
+Restoring *replaces* your shortcuts and categories, so make a backup first. Your notes and your background picture are
+kept, because the starter pack does not contain any.
 
 ## Your data
 Everything you create is stored in the `data` folder next to the program (`shortcuts.json`, `categories.json`,
-`icons/`). It never leaves your PC. Back it up from the menu, or copy the folder.
+`notes.json`, `background.*` and `icons/`). It never leaves your PC. Back it up from the menu, or copy the folder.
 
 ## Settings (environment variables, all optional)
 | Variable | Meaning |
