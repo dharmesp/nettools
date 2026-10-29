@@ -1,0 +1,15 @@
+# your own shortcuts, icons and logs - never commit these
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# the donate QR is compiled into donate.py, so the loose copy is not needed in the repo
+qrcode.png
+
+# editor / OS
+.vscode/
+.idea/
+Thumbs.db

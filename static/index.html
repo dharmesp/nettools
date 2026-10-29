@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tools Manager</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0f1720; --panel: #182230; --tile: #1e2b3c; --tile-hover: #2a3c54;
+    --text: #e8eef6; --muted: #8fa1b8; --accent: #3b9eff; --danger: #ff5c6c; --line: #2d3d52;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 13px/1.35 "Segoe UI", system-ui, sans-serif; min-height: 100vh; }
+  input { background: var(--bg); color: var(--text); border: 1px solid var(--line);
+          border-radius: 6px; padding: 7px 10px; font: inherit; width: 100%; }
+  input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+           padding: 7px 10px; font: inherit; width: 100%; margin-top: 4px; }
+  [hidden] { display: none !important; }
+  button { background: #2a3a50; color: var(--text); border: 0; border-radius: 6px;
+           padding: 7px 11px; font: inherit; cursor: pointer; white-space: nowrap; }
+  button:hover { background: #355070; }
+  button.primary { background: var(--accent); color: #fff; }
+  button.primary:hover { background: #2b87e0; }
+  button.on { background: var(--accent); color: #fff; }
+
+  .icon { width: 22px; height: 22px; border-radius: 5px; background: #fff; flex: none; display: grid;
+          place-items: center; overflow: hidden; }
+  .icon img { width: 100%; height: 100%; object-fit: contain; padding: 1px; }
+  .icon.letter { color: #fff; font-size: 12px; font-weight: 600; }
+  mark { background: #f5c54240; color: inherit; border-radius: 2px; }
+
+  .empty { color: var(--muted); text-align: center; padding: 80px 20px; }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line);
+           border-radius: 12px; padding: 22px; width: 440px; max-width: 94vw; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog h2 { margin: 0 0 14px; font-size: 16px; }
+  label { display: block; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
+  label input { margin-top: 4px; }
+  .row { display: flex; gap: 10px; }
+  .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+           background: #000c; padding: 10px 16px; border-radius: 8px; display: none; z-index: 10; }
+  #toast.err { background: var(--danger); }
+
+  /* ================= Windows XP (Luna) theme ================= */
+  body.xp { overflow: hidden; }
+  body.xp #toast { bottom: 44px; z-index: 100; }
+  #xp { position: fixed; inset: 0; z-index: 20; font: 11px Tahoma, Verdana, sans-serif; color: #000;
+        background:
+          radial-gradient(ellipse 70% 36% at 22% 100%, #6bc02f 0 97%, transparent 100%),
+          radial-gradient(ellipse 85% 30% at 92% 100%, #3f9a1c 0 97%, transparent 100%),
+          radial-gradient(ellipse 160% 44% at 55% 104%, #55ae24 0 97%, transparent 100%),
+          radial-gradient(ellipse 26% 8% at 20% 20%, rgba(255,255,255,.9), transparent 70%),
+          radial-gradient(ellipse 20% 6% at 72% 34%, rgba(255,255,255,.8), transparent 70%),
+          radial-gradient(ellipse 32% 7% at 46% 12%, rgba(255,255,255,.7), transparent 70%),
+          linear-gradient(#1d62d1 0%, #5d9be8 45%, #b5d4f5 78%); }
+  #taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; display: flex; z-index: 30;
+             border-top: 1px solid #0c3fa8;
+             background: linear-gradient(#245edb 0%, #3f8cf3 9%, #245edb 18%, #245edb 92%, #1941a5 100%); }
+  #startBtn { display: flex; align-items: center; gap: 6px; padding: 0 24px 0 10px; border: 0; cursor: pointer;
+              border-radius: 0 16px 16px 0; color: #fff; margin-top: -1px; height: 31px;
+              font: italic 700 21px "Trebuchet MS", Tahoma, sans-serif; letter-spacing: -.5px;
+              text-shadow: 1px 1px 2px #0b3d0b;
+              background: linear-gradient(#53b553 0%, #3c9d3c 12%, #2f8e2f 55%, #237523 100%);
+              box-shadow: inset -2px 0 4px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.5), 2px 0 3px rgba(0,0,0,.4); }
+  #startBtn:hover { filter: brightness(1.1); background: linear-gradient(#53b553 0%, #3c9d3c 12%, #2f8e2f 55%, #237523 100%); }
+  #startBtn.active { background: linear-gradient(#1f6b1f, #2a812a); box-shadow: inset 2px 2px 5px rgba(0,0,0,.5); filter: none; }
+  .flag { width: 18px; height: 18px; display: grid; grid-template: 1fr 1fr / 1fr 1fr; gap: 1px; transform: skewX(-5deg); }
+  .flag i:nth-child(1) { background: #f35325; } .flag i:nth-child(2) { background: #81bc06; }
+  .flag i:nth-child(3) { background: #05a6f0; } .flag i:nth-child(4) { background: #ffba08; }
+  #tray { margin-left: auto; display: flex; align-items: center; padding: 0 14px; color: #fff; font-size: 11px;
+          background: linear-gradient(#18a0f5, #0f7ee0 15%, #0b66cc 90%); border-left: 1px solid #0a4ea8;
+          box-shadow: inset 1px 0 0 #1b8ff0; }
+
+  #balloon { position: absolute; left: 14px; bottom: 44px; width: 230px; padding: 8px 12px; z-index: 35;
+             background: #ffffe1; border: 1px solid #000; border-radius: 8px; box-shadow: 2px 2px 4px rgba(0,0,0,.4);
+             animation: balloonin .35s ease-out; }
+  #balloon::after { content: ""; position: absolute; left: 34px; bottom: -11px; border: 5px solid transparent;
+                    border-top: 10px solid #000; }
+  @keyframes balloonin { from { opacity: 0; transform: translateY(8px); } }
+
+  #startmenu { position: absolute; left: 0; bottom: 30px; width: 430px; z-index: 40; background: #fff;
+               border: 1px solid #0831d9; border-bottom: 0; border-radius: 8px 8px 0 0;
+               box-shadow: 3px -2px 8px rgba(0,0,0,.45); animation: smopen .22s ease-out; }
+  @keyframes smopen { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0); } }
+  .sm-head { display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 10px; color: #fff;
+             border-radius: 7px 7px 0 0; font: 700 16px "Trebuchet MS", Tahoma, sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,.6);
+             background: linear-gradient(#1a5fd6, #4a90f0 45%, #2a6fe0); }
+  .sm-avatar { width: 44px; height: 44px; border-radius: 9px; display: grid; place-items: center;
+               filter: drop-shadow(1px 2px 3px rgba(0,0,0,.5)); }
+  .sm-avatar img { display: block; }
+  .sm-body { display: flex; border-top: 2px solid #f29a3b; }
+  .sm-left { flex: 1.3; background: #fff; display: flex; flex-direction: column; min-width: 0; border-right: 1px solid #95bdee; }
+  .sm-search { padding: 6px; background: #f1f6fd; border-bottom: 1px solid #d5e3f7; }
+  .sm-search input { border: 1px solid #7f9db9; border-radius: 0; background: #fff; color: #000; padding: 3px 6px; font: 11px Tahoma; }
+  .sm-search input:focus { outline: 1px solid #316ac5; }
+  .sm-right { flex: 1; background: #d3e5fa; padding: 6px 0; color: #00136b; }
+  #startmenu ul { list-style: none; margin: 0; padding: 0; }
+  #xpMain { overflow-y: auto; min-height: 250px; max-height: min(52vh, 430px); padding: 3px 2px; scrollbar-width: thin; }
+  #startmenu li { display: flex; align-items: center; gap: 8px; padding: 5px 8px; font-size: 12px; cursor: default;
+                  white-space: nowrap; position: relative; }
+  .sm-right li { font-weight: 700; }
+  #startmenu li:hover, #startmenu li.open { background: #316ac5; color: #fff; }
+  #startmenu li.xsep, #startmenu li.xempty { pointer-events: none; }
+  #startmenu li.xsep { height: 1px; padding: 0; margin: 4px 8px; background: linear-gradient(90deg, transparent, #8aa9d6 30%, transparent); }
+  #startmenu li.xsep:hover { background: linear-gradient(90deg, transparent, #8aa9d6 30%, transparent); }
+  #startmenu li.xempty { color: #888; }
+  #startmenu li.xempty:hover { background: none; color: #888; }
+  .chk { width: 12px; font-size: 11px; }
+  .xi .nm { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .xi .xcat { font-size: 10px; opacity: .6; }
+  .xc > .nm { font-weight: 700; flex: 1; }
+  .xc > .arr { font-size: 9px; }
+  .fi { font-size: 16px; line-height: 1; }
+  #startmenu .icon { width: 20px; height: 20px; border-radius: 3px; }
+  #startmenu .icon.letter { font-size: 11px; }
+  .xtools { display: none; gap: 2px; }
+  body.editing .xtools { display: inline-flex; }
+  .xtools button { padding: 0 5px; font-size: 10px; background: #ece9d8; color: #000; border: 1px solid #7f9db9; border-radius: 2px; }
+  .xtools button:hover { background: #fff; }
+  .xtools button.del:hover { background: #ffb3b3; }
+  .flyout { display: none; position: fixed; width: 300px; padding: 2px; background: #fff; color: #000; z-index: 50;
+            border: 1px solid #7f9db9; box-shadow: 3px 3px 6px rgba(0,0,0,.4); overflow-y: auto; scrollbar-width: thin; }
+  #startmenu li.open > .flyout { display: block; animation: flyopen .16s ease-out; }
+  @keyframes flyopen { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+  .flyout li { color: #000; }
+  .flyout li:hover { background: #316ac5; color: #fff; }
+  .sm-foot { display: flex; justify-content: flex-end; align-items: center; height: 38px; padding: 0 10px;
+             background: linear-gradient(#3b78e7, #245edb 20%, #1941a5); }
+  .sm-foot button { background: none; color: #fff; padding: 4px 8px; font: 11px Tahoma; border-radius: 3px; }
+  .sm-foot button:hover { background: rgba(255,255,255,.2); }
+  .sm-foot { gap: 6px; }
+  #xpOff { background: linear-gradient(#f59a62, #d8501a); border: 1px solid #fff5; margin-left: 4px; font-weight: 700; }
+  #xpOff:hover { background: linear-gradient(#ffb482, #e8632b); }
+
+  /* ================= Windows 98 menu on a Windows 8 desktop ================= */
+  body.w8 { --raised: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+            --sunken: inset -1px -1px #fff, inset 1px 1px #808080, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+            overflow: hidden; }
+  body.w8 #toast { bottom: 44px; z-index: 100; }
+  #w8 { position: fixed; inset: 0; z-index: 20; overflow: hidden; color: #000;
+        font: 11px Tahoma, "MS Sans Serif", Arial, sans-serif;
+        background: linear-gradient(135deg, #0b4f94 0%, #1783d1 50%, #0a62b4 100%); }
+  #w8::before, #w8::after { content: ""; position: absolute; background: rgba(255,255,255,.07); transform: skewY(-14deg); }
+  #w8::before { width: 55%; height: 60%; right: 6%; top: 14%; }
+  #w8::after { width: 30%; height: 38%; right: 22%; top: 30%; background: rgba(255,255,255,.06); }
+  #w8bar { position: absolute; left: 0; right: 0; bottom: 0; height: 32px; z-index: 30; display: flex; align-items: center;
+           padding: 3px 4px; background: #c0c0c0; box-shadow: inset 0 1px #dfdfdf, inset 0 2px #fff; }
+  #w8Start { display: flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border: 0; border-radius: 0;
+             background: #c0c0c0; color: #000; font: 12px Tahoma, Arial, sans-serif; box-shadow: var(--raised); cursor: default; }
+  #w8Start:hover { background: #c0c0c0; }
+  #w8Start.active { box-shadow: var(--sunken); padding: 1px 7px 0 9px; }
+  .w98flag { width: 16px; height: 14px; display: grid; grid-template: 1fr 1fr / 1fr 1fr; gap: 1px; transform: skewX(-6deg); }
+  .w98flag i:nth-child(1) { background: #f35325; } .w98flag i:nth-child(2) { background: #81bc06; }
+  .w98flag i:nth-child(3) { background: #05a6f0; } .w98flag i:nth-child(4) { background: #ffba08; }
+  #w8tray { margin-left: auto; height: 24px; padding: 0 10px; display: flex; align-items: center; box-shadow: var(--sunken); }
+
+  #w8menu { position: absolute; left: 2px; bottom: 32px; width: 232px; z-index: 40; display: flex; padding: 3px;
+            background: #c0c0c0; box-shadow: var(--raised); }
+  .w98banner { flex: none; width: 24px; padding-top: 8px; margin-right: 2px; color: #fff; font: 17px Arial, sans-serif;
+               letter-spacing: 1px; white-space: nowrap; writing-mode: vertical-rl; transform: rotate(180deg);
+               background: linear-gradient(0deg, #000080, #1084d0); }
+  .w98banner b { font-weight: 700; margin-bottom: 4px; }
+  #w8 ul { list-style: none; margin: 0; padding: 0; }
+  .w98top { flex: 1; min-width: 0; }
+  #w8 li.mi { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 3px 6px; position: relative;
+              white-space: nowrap; font-size: 12px; cursor: default; }
+  #w8 li.mi:hover, #w8 li.mi.open { background: #000080; color: #fff; }
+  #w8 li.mi.dis, #w8 li.mi.dis:hover { background: none; color: #808080; text-shadow: 1px 1px #fff; }
+  #w8 li.sep { height: 0; margin: 3px 2px; border-top: 1px solid #808080; border-bottom: 1px solid #fff; }
+  #w8 .ic { width: 22px; flex: none; text-align: center; font-size: 17px; line-height: 1; }
+  #w8 .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  #w8 .arr { font-size: 8px; }
+  #w8 .icon { width: 20px; height: 20px; border-radius: 0; }
+  #w8 .icon.letter { font-size: 11px; }
+  #w8 li.find input { flex: 1; min-width: 0; border: 0; border-radius: 0; background: #fff; color: #000; padding: 3px 4px;
+                      font: 12px Tahoma, Arial, sans-serif; box-shadow: var(--sunken); }
+  #w8 li.find input:focus { outline: none; }
+  .w98sub { display: none; position: fixed; z-index: 60; min-width: 210px; max-width: 360px; padding: 3px; color: #000;
+            background: #c0c0c0; box-shadow: var(--raised); overflow-y: auto; scrollbar-width: thin; }
+  #w8 li.open > .w98sub { display: block; }
+  #w8 .xtools button { background: #c0c0c0; color: #000; border: 0; border-radius: 0; box-shadow: var(--raised); }
+  #w8 .xtools button:hover { background: #dfdfdf; }
+
+  body.w8 dialog { padding: 0; background: #c0c0c0; color: #000; border: 2px solid; border-color: #fff #404040 #404040 #fff;
+                   border-radius: 0; font: 11px Tahoma, Arial, sans-serif; box-shadow: 1px 1px 0 #000; }
+  body.w8 dialog::backdrop { background: rgba(0,0,0,.35); }
+  body.w8 dialog h2 { margin: -12px -12px 10px; padding: 3px 6px; color: #fff; font: 700 12px Tahoma, Arial, sans-serif;
+                      background: linear-gradient(90deg, #000080, #1084d0); }
+  body.w8 #form, body.w8 #askForm { padding: 12px; }
+  body.w8 label { color: #000; font-size: 11px; }
+  body.w8 dialog input, body.w8 dialog select { background: #fff; color: #000; border: 0; border-radius: 0; box-shadow: var(--sunken);
+                                                padding: 3px 4px; font: 11px Tahoma, Arial, sans-serif; }
+  body.w8 dialog input:focus, body.w8 dialog select:focus { outline: 1px dotted #000; }
+  body.w8 dialog button { background: #c0c0c0; color: #000; border: 0; border-radius: 0; box-shadow: var(--raised);
+                          min-width: 72px; padding: 4px 14px; font: 11px Tahoma, Arial, sans-serif; }
+  body.w8 dialog button:active { box-shadow: var(--sunken); }
+  body.w8 dialog button.primary { outline: 1px solid #000; font-weight: 700; }
+
+  /* desktop icons (both themes) */
+  .desk { position: absolute; left: 0; top: 0; right: 0; z-index: 5; }
+  #deskXp { bottom: 30px; } #deskW8 { bottom: 32px; }
+  .dicon { position: absolute; width: 80px; padding: 4px 2px 5px; display: flex; flex-direction: column; align-items: center;
+           gap: 4px; text-align: center; color: #fff; cursor: default; user-select: none; border: 1px solid transparent;
+           text-shadow: 1px 1px 1px #000, 0 0 3px rgba(0,0,0,.8); }
+  .dicon .icon { width: 42px; height: 42px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .dicon .icon.letter { font-size: 22px; }
+  .dicon .dn { font-size: 12px; line-height: 1.15; max-height: 2.4em; overflow: hidden; word-break: break-word; }
+  #w8 .dicon .icon { width: 42px; height: 42px; border-radius: 6px; }
+  #w8 .dicon .icon.letter { font-size: 22px; }
+  .dicon:hover { background: rgba(255,255,255,.14); }
+  .dicon.sel { background: rgba(49,106,197,.6); border-color: rgba(255,255,255,.8); border-style: dotted; }
+  .dicon.dragging { opacity: .45; }
+
+  /* drop highlight for dragging a shortcut onto a category row */
+  #startmenu li.drop { background: #316ac5; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
+  #w8 li.mi.drop { background: #000080; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
+
+  /* donate dialog */
+  #donateDlg { width: 340px; text-align: center; }
+  .donate-text { margin: 0 0 10px; line-height: 1.4; }
+  .donate-qr { display: block; margin: 6px auto; background: #fff; border-radius: 4px; }
+  .donate-hint { margin: 4px 0 0; opacity: .75; font-size: 11px; }
+  #donateDlg .actions { justify-content: center; }
+  #donateDlg a { color: inherit; font-weight: 600; }
+  body.xp #donateForm { padding: 14px; }
+  body.w8 #donateForm { padding: 12px; }
+
+  /* right-click menu, themed */
+  #ctx { position: fixed; z-index: 1000; min-width: 170px; padding: 4px; background: var(--panel); color: var(--text);
+         border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); font-size: 13px; }
+  #ctx div { padding: 6px 12px; border-radius: 5px; cursor: default; white-space: nowrap; }
+  #ctx div:hover { background: var(--accent); color: #fff; }
+  #ctx div.danger:hover { background: var(--danger); }
+  #ctx hr { border: 0; border-top: 1px solid var(--line); margin: 4px 2px; }
+  body.xp #ctx { background: #fff; color: #000; border: 1px solid #7f9db9; border-radius: 0; font: 12px Tahoma, sans-serif;
+                 box-shadow: 3px 3px 5px rgba(0,0,0,.4); padding: 2px; }
+  body.xp #ctx div { border-radius: 0; } body.xp #ctx div:hover, body.xp #ctx div.danger:hover { background: #316ac5; color: #fff; }
+  body.xp #ctx hr { border-top-color: #d5e3f7; }
+  body.w8 #ctx { background: #c0c0c0; color: #000; border: 0; border-radius: 0; box-shadow: var(--raised);
+                 font: 12px Tahoma, Arial, sans-serif; padding: 3px; }
+  body.w8 #ctx div { border-radius: 0; } body.w8 #ctx div:hover, body.w8 #ctx div.danger:hover { background: #000080; color: #fff; }
+  body.w8 #ctx hr { border-top: 1px solid #808080; border-bottom: 1px solid #fff; margin: 3px 2px; }
+
+  /* XP-style dialog */
+  body.xp dialog { padding: 0; background: #ece9d8; color: #000; border: 3px solid #0054e3; border-top: 0;
+                   border-radius: 8px 8px 0 0; font: 11px Tahoma, Verdana, sans-serif; overflow: hidden; }
+  body.xp dialog::backdrop { background: rgba(0,0,0,.3); }
+  body.xp dialog h2 { margin: -14px -14px 12px; padding: 7px 10px; font: 700 13px "Trebuchet MS", Tahoma, sans-serif; color: #fff;
+                      text-shadow: 1px 1px 1px #0a246a;
+                      background: linear-gradient(#0997ff, #0053ee 8%, #0050ee 40%, #06f 88%, #0058ee); }
+  body.xp #form, body.xp #askForm { padding: 14px; }
+  #askDlg { width: 380px; }
+  #askMsg:empty { display: none; }
+  body.xp label { color: #000; font-size: 11px; }
+  body.xp dialog input, body.xp dialog select { background: #fff; color: #000; border: 1px solid #7f9db9; border-radius: 0;
+                                                padding: 3px 5px; font: 11px Tahoma; }
+  body.xp dialog input:focus, body.xp dialog select:focus { outline: 1px solid #316ac5; }
+  body.xp dialog button { color: #000; border: 1px solid #003c74; border-radius: 3px; padding: 4px 14px; font: 11px Tahoma;
+                          background: linear-gradient(#fff, #ece9d8 85%, #d6d0c0); }
+  body.xp dialog button:hover { box-shadow: inset 0 0 0 2px #f8b330; }
+  body.xp dialog button.primary { font-weight: 700; }
+</style>
+</head>
+<body>
+
+
+<dialog id="dlg">
+  <form method="dialog" id="form">
+    <h2 id="dlgTitle">Add shortcut</h2>
+    <label>Type
+      <select name="type" id="typeSel">
+        <option value="url">Web link</option>
+        <option value="bat">BAT / CMD file</option>
+      </select></label>
+    <label id="batFields" hidden>Full path to .bat / .cmd file
+      <input name="path" placeholder="C:\tools\my-tool\start.bat" autocomplete="off">
+      <span style="display:flex;align-items:center;gap:6px;margin-top:8px">
+        <input type="checkbox" name="hidden" id="hiddenChk" style="width:auto;margin:0">
+        <span>Run hidden (no console window)</span></span></label>
+    <label><span id="urlLabel">URL</span> <input name="url" id="urlInput" required placeholder="https://example.com"></label>
+    <label>Name (optional) <input name="name"></label>
+    <label>Category / section
+      <input name="category" list="catlist" placeholder="Pick one or type a new one" autocomplete="off"></label>
+    <datalist id="catlist"></datalist>
+    <label>Icon (optional – image URL or local file path; auto-detected from the site if a URL is set)
+      <input name="icon_url" placeholder="https://…/logo.png  or  C:\icons\tool.png"></label>
+    <div class="row">
+      <label style="flex:1">Window width <input name="width" type="number" placeholder="1280" min="300" max="4000"></label>
+      <label style="flex:1">Window height <input name="height" type="number" placeholder="800" min="300" max="4000"></label>
+    </div>
+    <div class="actions">
+      <button type="button" id="cancelBtn">Cancel</button>
+      <button type="submit" class="primary" id="saveBtn">Save</button>
+    </div>
+  </form>
+</dialog>
+<input type="file" id="restoreFile" accept=".zip,application/zip" hidden>
+<dialog id="donateDlg">
+  <form method="dialog" id="donateForm">
+    <h2>☕ Buy me a coffee</h2>
+    <p class="donate-text">Enjoying Tools Manager? It's free and open source. If it saves you time,
+      you can support its development with a coffee. Thank you!</p>
+    <img class="donate-qr" src="/donate-qr.png" alt="PayPal QR code" width="240" height="240">
+    <p class="donate-hint">Scan with your phone camera or the PayPal app.</p>
+    <p class="donate-hint" id="donateLinks" hidden>Or open <a id="donatePay" href="#" target="_blank" rel="noopener"></a><br>
+      Official project: <a id="donateRepo" href="#" target="_blank" rel="noopener"></a></p>
+    <div class="actions"><button type="submit" class="primary">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="askDlg">
+  <form method="dialog" id="askForm">
+    <h2 id="askTitle"></h2>
+    <p id="askMsg" style="margin:0 0 12px"></p>
+    <input name="answer" id="askInput" autocomplete="off">
+    <select id="askSelect" hidden></select>
+    <div class="actions">
+      <button type="button" id="askCancel">Cancel</button>
+      <button type="submit" class="primary" id="askOk">OK</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Windows 98 menu on a Windows 8 desktop -->
+<div id="w8" hidden>
+  <div id="deskW8" class="desk"></div>
+  <div id="w8menu" hidden></div>
+  <div id="w8bar">
+    <button id="w8Start"><span class="w98flag"><i></i><i></i><i></i><i></i></span><b>Start</b></button>
+    <div id="w8tray"><span id="w8Clock"></span></div>
+  </div>
+</div>
+
+<!-- Windows XP theme: desktop + taskbar + Start menu with category flyouts -->
+<div id="xp" hidden>
+  <div id="deskXp" class="desk"></div>
+  <div id="balloon" hidden><b>To begin, click here</b><br>Open the Start menu to find your tools.</div>
+  <div id="startmenu" hidden>
+    <div class="sm-head"><div class="sm-avatar"><img src="/favicon.svg" alt="" width="38" height="38"></div><span>Tools Manager</span></div>
+    <div class="sm-body">
+      <div class="sm-left">
+        <div class="sm-search"><input id="xpSearch" placeholder="Search all tools…" autocomplete="off"></div>
+        <ul id="xpMain"></ul>
+      </div>
+      <div class="sm-right">
+        <ul>
+          <li id="xpAdd">➕ Add shortcut…</li>
+          <li id="xpAddCat">📁 Add category…</li>
+          <li id="xpEdit"><span id="xpEditChk" class="chk"></span>✏️ Edit mode</li>
+          <li class="xsep"></li>
+          <li id="xpBackup">💾 Backup (ZIP)…</li>
+          <li id="xpRestore">📥 Restore (ZIP)…</li>
+          <li id="xpReset">🧹 Factory reset…</li>
+          <li class="xsep"></li>
+          <li id="xpCoffee">☕ Buy me a coffee</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sm-foot">
+      <button id="xpModern">🪟 Windows 98 + 8 theme</button>
+      <button id="xpOff" title="Shut down Tools Manager">⏻ Shut Down…</button>
+    </div>
+  </div>
+  <div id="taskbar">
+    <button id="startBtn"><span class="flag"><i></i><i></i><i></i><i></i></span><span>start</span></button>
+    <div id="tray"><span id="clock"></span></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const UNCAT = 'Uncategorized';
+let shortcuts = [], categories = [], editingId = null, dragId = null;
+
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let collapsed = new Set(store.get('collapsed', []));
+
+function toast(msg, err) {
+  const t = $('#toast');
+  t.textContent = msg; t.className = err ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', err ? 4000 : 1800);
+}
+
+async function api(method, url, body) {
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' },
+                               body: body ? JSON.stringify(body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+function hue(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function btn(text, title, fn, cls) {
+  const b = document.createElement('button');
+  b.textContent = text; b.title = title; if (cls) b.className = cls;
+  b.onclick = e => { e.stopPropagation(); fn(); };
+  return b;
+}
+
+// name text with the matched search terms highlighted
+function highlight(el, text, terms) {
+  const re = terms.length ? new RegExp('(' + terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'ig') : null;
+  if (!re) { el.textContent = text; return; }
+  text.split(re).forEach((part, i) => {
+    if (i % 2) { const m = document.createElement('mark'); m.textContent = part; el.append(m); }
+    else el.append(part);
+  });
+}
+
+function matches(s, terms) {
+  const hay = (s.name + ' ' + s.url + ' ' + (s.path || '') + ' ' + (s.category || UNCAT)).toLowerCase();
+  return terms.every(t => hay.includes(t));
+}
+
+/* ---------------- custom right-click menu (replaces the browser's) ---------------- */
+const withCtx = (items, el) => { el._ctx = items; return el; };
+const closeAllMenus = () => { if (isXp()) closeStart(); if (isW8()) closeW8(); };
+const shortcutCtx = s => [
+  { label: 'Open', fn: () => launch(s) },
+  s.desktop ? { label: 'Remove from desktop', fn: () => removeFromDesktop(s) }
+            : { label: 'Add to desktop', fn: () => placeOnDesktop(s.id, 0, 0) },
+  { label: 'Edit…', fn: () => openDialog(s) },
+  { label: 'Move to category…', fn: async () => {
+      const v = await ask({ title: 'Move shortcut', message: `Move "${s.name}" to:`, ok: 'Move', value: s.category || '',
+                            choices: [['', UNCAT], ...categories.map(c => [c, c])] });
+      if (v !== null) moveTo(s.id, v);
+    } },
+  { label: 'Re-fetch icon', fn: () => refreshIcon(s) },
+  null,
+  { label: 'Delete', fn: () => del(s), danger: true },
+];
+const catCtx = cat => [
+  { label: 'Rename…', fn: () => renameCat(cat) },
+  { label: 'Delete category', fn: () => delCat(cat), danger: true },
+];
+
+const ctxMenu = document.createElement('div');
+ctxMenu.id = 'ctx'; ctxMenu.hidden = true;
+document.body.append(ctxMenu);
+function hideCtx() { ctxMenu.hidden = true; }
+function showCtx(items, x, y) {
+  ctxMenu.textContent = '';
+  for (const it of items) {
+    if (!it) { ctxMenu.append(document.createElement('hr')); continue; }
+    const d = document.createElement('div');
+    d.textContent = it.label;
+    if (it.danger) d.className = 'danger';
+    d.onclick = () => { hideCtx(); closeAllMenus(); it.fn(); };
+    ctxMenu.append(d);
+  }
+  ctxMenu.hidden = false;
+  ctxMenu.style.left = Math.max(0, Math.min(x, innerWidth - ctxMenu.offsetWidth - 4)) + 'px';
+  ctxMenu.style.top = Math.max(0, Math.min(y, innerHeight - ctxMenu.offsetHeight - 4)) + 'px';
+}
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('input, textarea, select')) return;      // keep copy/paste in text fields
+  e.preventDefault();                                           // no browser menu anywhere else
+  for (let el = e.target; el; el = el.parentElement) {
+    if (el._ctx) return showCtx(el._ctx, e.clientX, e.clientY);
+  }
+  hideCtx();
+});
+document.addEventListener('mousedown', e => { if (!e.target.closest('#ctx')) hideCtx(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtx(); });
+addEventListener('blur', hideCtx);
+addEventListener('resize', hideCtx);
+document.addEventListener('scroll', hideCtx, true);
+
+function makeIcon(s) {
+  const icon = document.createElement('div');
+  icon.className = 'icon';
+  const letter = () => {
+    icon.className = 'icon letter';
+    icon.style.background = `hsl(${hue(s.name)} 55% 45%)`;
+    icon.textContent = s.type === 'bat' ? '⚙' : (s.name[0] || '?').toUpperCase();
+  };
+  if (s.icon) { const img = new Image(); img.src = s.icon; img.alt = ''; img.loading = 'lazy'; img.onerror = letter; icon.append(img); }
+  else letter();
+  return icon;
+}
+
+/* ---------------- desktop icons ---------------- */
+const COLW = 86, ROWH = 90, PAD = 8;
+const deskBox = () => $(isXp() ? '#deskXp' : '#deskW8');
+const deskRows = () => Math.max(1, Math.floor((deskBox().clientHeight - PAD) / ROWH));
+
+// nearest free grid cell, scanning down each column from the wanted cell
+function freeCell(col, row, ignoreId) {
+  const used = new Set(shortcuts.filter(s => s.desktop && s.id !== ignoreId).map(s => s.dx + ',' + s.dy));
+  const rows = deskRows();
+  for (let i = col * rows + row, n = 0; n < 5000; i++, n++) {
+    const c = Math.floor(i / rows), r = i % rows;
+    if (!used.has(c + ',' + r)) return [c, r];
+  }
+  return [col, row];
+}
+
+async function placeOnDesktop(id, col, row) {
+  const [dx, dy] = freeCell(col, row, id);
+  try { await api('PUT', `/api/shortcuts/${id}`, { desktop: true, dx, dy }); await load(); }
+  catch (e) { toast(e.message, true); }
+}
+async function removeFromDesktop(s) {
+  try { await api('PUT', `/api/shortcuts/${s.id}`, { desktop: false }); await load(); }
+  catch (e) { toast(e.message, true); }
+}
+
+const otherTheme = () => isXp() ? ['w8', 'Windows 98 + 8'] : ['xp', 'Windows XP'];
+const deskCtx = () => [
+  { label: 'New shortcut…', fn: () => openDialog(null) },
+  { label: 'New category…', fn: addCat },
+  { label: (document.body.classList.contains('editing') ? '✓ ' : '') + 'Edit mode', fn: toggleEdit },
+  null,
+  { label: `Switch to ${otherTheme()[1]} theme`, fn: () => setTheme(otherTheme()[0]) },
+];
+
+function deskIcon(s) {
+  const d = document.createElement('div');
+  d.className = 'dicon';
+  d.style.left = (PAD + s.dx * COLW) + 'px';
+  d.style.top = (PAD + s.dy * ROWH) + 'px';
+  d.title = s.type === 'bat' ? s.path : s.url;
+  const dn = document.createElement('div'); dn.className = 'dn'; dn.textContent = s.name;
+  d.append(makeIcon(s), dn);
+  d.onclick = e => {
+    e.stopPropagation();
+    d.parentElement.querySelectorAll('.dicon.sel').forEach(x => x.classList.remove('sel'));
+    d.classList.add('sel');
+  };
+  d.ondblclick = () => launch(s);
+  d._ctx = shortcutCtx(s);
+  dragSource(d, s);
+  return d;
+}
+
+function renderDesktop() {
+  $('#deskXp').textContent = ''; $('#deskW8').textContent = '';
+  if (!isXp() && !isW8()) return;
+  const box = deskBox();
+  box._ctx = deskCtx();
+  box.onclick = () => box.querySelectorAll('.dicon.sel').forEach(x => x.classList.remove('sel'));
+  box.ondragover = e => { if (dragId) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } };
+  box.ondrop = e => {                               // a menu item or an existing icon dropped on the desktop
+    if (!dragId) return;
+    e.preventDefault();
+    const r = box.getBoundingClientRect();
+    const col = Math.max(0, Math.floor((e.clientX - r.left - PAD / 2) / COLW));
+    const row = Math.min(deskRows() - 1, Math.max(0, Math.floor((e.clientY - r.top - PAD / 2) / ROWH)));
+    placeOnDesktop(dragId, col, row);
+  };
+  for (const s of shortcuts) if (s.desktop) box.append(deskIcon(s));
+}
+
+function render() {
+  renderDesktop();
+  if (isXp()) renderXp(); else renderW8();
+}
+
+async function load() {
+  [shortcuts, categories] = await Promise.all([api('GET', '/api/shortcuts'), api('GET', '/api/categories')]);
+  $('#catlist').replaceChildren(...categories.map(c => Object.assign(document.createElement('option'), { value: c })));
+  render();
+}
+
+async function launch(s) {
+  usage[s.id] = (usage[s.id] || 0) + 1; store.set('usage', usage);
+  try { await api('POST', `/api/shortcuts/${s.id}/launch`); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function refreshIcon(s) {
+  toast('Fetching icon…');
+  try { Object.assign(s, await api('POST', `/api/shortcuts/${s.id}/refresh-icon`)); render(); toast('Icon updated'); }
+  catch (e) { toast(e.message, true); }
+}
+
+// in-page replacement for prompt()/confirm(); resolves to the text (input mode), the chosen value
+// (choices mode, [[value, label], ...]), true, or null if cancelled
+function ask({ title, message = '', input = false, choices = null, value = '', ok = 'OK' }) {
+  return new Promise(resolve => {
+    const dlg = $('#askDlg'), inp = $('#askInput'), sel = $('#askSelect');
+    let result = null;
+    $('#askTitle').textContent = title;
+    $('#askMsg').textContent = message;
+    inp.hidden = !input; inp.value = value;
+    sel.hidden = !choices;
+    if (choices) {
+      sel.replaceChildren(...choices.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
+      sel.value = value;
+    }
+    $('#askOk').textContent = ok;
+    $('#askForm').onsubmit = e => {
+      e.preventDefault();
+      result = choices ? sel.value : input ? inp.value.trim() : true;
+      dlg.close();
+    };
+    $('#askCancel').onclick = () => dlg.close();
+    dlg.onclose = () => resolve(result);
+    dlg.showModal();
+    if (input) { inp.focus(); inp.select(); } else if (choices) sel.focus(); else $('#askOk').focus();
+  });
+}
+
+// move a shortcut to another category ('' = Uncategorized)
+async function moveTo(id, cat) {
+  const s = shortcuts.find(x => x.id === id);
+  if (!s || (s.category || '') === cat) return;
+  try {
+    await api('PUT', `/api/shortcuts/${id}`, { category: cat });
+    await load();
+    toast(`Moved “${s.name}” to ${cat || UNCAT}`);
+  } catch (e) { toast(e.message, true); }
+}
+
+// drag a shortcut row onto a category row (Windows 98 / XP menus)
+function dragSource(el, s) {
+  el.draggable = true;
+  el.ondragstart = e => { dragId = s.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', s.name); };
+  el.ondragend = () => { dragId = null; document.querySelectorAll('.drop').forEach(x => x.classList.remove('drop')); };
+}
+function dropTarget(el, cat) {
+  el.addEventListener('dragenter', e => { if (dragId) { e.preventDefault(); el.classList.add('drop'); } });
+  el.addEventListener('dragover', e => { if (dragId) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } });
+  el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
+  el.addEventListener('drop', e => {
+    if (!dragId) return;
+    e.preventDefault(); e.stopPropagation();
+    el.classList.remove('drop');
+    moveTo(dragId, cat);
+  });
+}
+
+async function del(s) {
+  if (!await ask({ title: 'Delete shortcut', message: `Delete "${s.name}"?`, ok: 'Delete' })) return;
+  try { await api('DELETE', `/api/shortcuts/${s.id}`); await load(); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function addCat() {
+  const name = await ask({ title: 'Add category', message: 'Category name:', input: true, ok: 'Create' });
+  if (!name) return;
+  try { await api('POST', '/api/categories', { name }); await load(); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function renameCat(cat) {
+  const name = await ask({ title: 'Rename category', message: 'New name:', input: true, value: cat, ok: 'Rename' });
+  if (!name || name === cat) return;
+  try {
+    await api('PUT', `/api/categories/${encodeURIComponent(cat)}`, { name });
+    if (collapsed.delete(cat)) { collapsed.add(name.trim()); store.set('collapsed', [...collapsed]); }
+    await load();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function delCat(cat) {
+  if (!await ask({ title: 'Delete category', message: `Delete "${cat}"? Its shortcuts move to "${UNCAT}".`, ok: 'Delete' })) return;
+  try { await api('DELETE', `/api/categories/${encodeURIComponent(cat)}`); await load(); }
+  catch (e) { toast(e.message, true); }
+}
+
+function syncType() {
+  const bat = $('#typeSel').value === 'bat';
+  $('#batFields').hidden = !bat;
+  $('#form').path.required = bat;
+  $('#urlInput').required = !bat;
+  $('#urlLabel').textContent = bat ? 'URL to open once started (optional – e.g. http://localhost:5000)' : 'URL';
+}
+$('#typeSel').onchange = syncType;
+
+function openDialog(s) {
+  editingId = s ? s.id : null;
+  const f = $('#form');
+  $('#dlgTitle').textContent = s ? 'Edit shortcut' : 'Add shortcut';
+  f.type.value = s ? (s.type || 'url') : 'url';
+  f.type.disabled = !!s;                       // type is fixed after creation
+  f.path.value = s ? (s.path || '') : '';
+  f.hidden.checked = s ? !!s.hidden : false;
+  syncType();
+  f.url.value = s ? s.url : '';
+  f.name.value = s ? s.name : '';
+  f.category.value = s ? (s.category || '') : '';
+  f.icon_url.value = '';
+  f.width.value = s ? s.width : '';
+  f.height.value = s ? s.height : '';
+  $('#dlg').showModal();
+  f.url.focus();
+}
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, save = $('#saveBtn');
+  const body = { type: f.type.value, path: f.path.value, hidden: f.hidden.checked, url: f.url.value, name: f.name.value, category: f.category.value,
+                 icon_url: f.icon_url.value, width: f.width.value, height: f.height.value };
+  save.disabled = true; save.textContent = 'Fetching icon…';
+  try {
+    await (editingId ? api('PUT', `/api/shortcuts/${editingId}`, body) : api('POST', '/api/shortcuts', body));
+    $('#dlg').close();
+    await load();
+  } catch (err) { toast(err.message, true); }
+  finally { save.disabled = false; save.textContent = 'Save'; }
+});
+
+$('#cancelBtn').onclick = () => $('#dlg').close();
+function toggleEdit() {
+  const on = document.body.classList.toggle('editing');
+  $('#xpEditChk').textContent = on ? '✓' : '';
+  renderW8();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !$('#dlg').open) {
+    e.preventDefault();
+    if (isXp()) { if (!startOpen()) openStart(); $('#xpSearch').focus(); }
+    else { if (!w8Open()) openW8(); $('#w8Find').focus(); }
+  }
+});
+/* ---------------- shut down / window lifetime ---------------- */
+const pageId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+let shuttingDown = false;
+api('POST', '/api/hello', { id: pageId }).catch(() => {});
+// closing the window (X button, Alt+F4…) tells the server; it stops itself unless another page is still open
+addEventListener('pagehide', () => {
+  if (!shuttingDown) navigator.sendBeacon('/api/bye', new Blob([JSON.stringify({ id: pageId })], { type: 'application/json' }));
+});
+
+async function powerOff() {
+  if (!await ask({ title: 'Shut Down Tools Manager', message: 'This stops the server on port 8000 and closes this window. Your tool windows stay open.', ok: 'Shut Down' })) return;
+  try { await api('POST', '/api/shutdown'); }
+  catch (e) { return toast('Could not shut down: ' + e.message, true); }
+  shuttingDown = true;
+  document.body.innerHTML = '<div style="position:fixed;inset:0;display:grid;place-items:center;background:#000;color:#ff9f1a;' +
+    'font:16px Tahoma,sans-serif;text-align:center"><div><div style="font-size:42px">⏻</div>' +
+    '<p>Tools Manager has stopped.<br>You can close this window.</p></div></div>';
+  setTimeout(() => window.close(), 400);
+}
+
+async function showDonate() {
+  $('#donateDlg').showModal();
+  try {                                                  // links come from the program (donate.py)
+    const d = await api('GET', '/api/donate');
+    for (const [id, url] of [['#donatePay', d.paypal], ['#donateRepo', d.repo]]) {
+      const a = $(id); a.href = url; a.textContent = url.replace(/^https:\/\//, '');
+    }
+    $('#donateLinks').hidden = false;
+  } catch {}
+}
+
+/* ---------------- backup / restore / factory reset ---------------- */
+async function backupDownload() {
+  try {
+    const r = await fetch('/api/export');
+    if (!r.ok) throw new Error('Backup failed');
+    const blob = await r.blob();
+    const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'tools-manager-backup.zip';
+    if (window.showSaveFilePicker) {                      // let the user pick where to save
+      try {
+        const h = await showSaveFilePicker({ suggestedName: name, types: [{ description: 'ZIP backup', accept: { 'application/zip': ['.zip'] } }] });
+        const w = await h.createWritable(); await w.write(blob); await w.close();
+        return toast('Backup saved');
+      } catch (e) { if (e.name === 'AbortError') return; }   // anything else: fall back to a normal download
+    }
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Backup downloaded — see your Downloads folder');
+  } catch (e) { toast(e.message, true); }
+}
+
+const restoreInput = $('#restoreFile');
+function restoreFromZip() { restoreInput.value = ''; restoreInput.click(); }   // must run straight from a click
+restoreInput.onchange = async () => {
+  const f = restoreInput.files[0];
+  if (!f) return;
+  if (!await ask({ title: 'Restore backup', ok: 'Restore',
+                   message: `Restore "${f.name}"? This REPLACES all your current categories, shortcuts and icons. Only restore backups you trust.` })) return;
+  try {
+    const r = await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: f });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Restore failed');
+    await load();
+    toast(`Restored ${d.shortcuts} shortcuts and ${d.categories} categories`);
+  } catch (e) { toast(e.message, true); }
+};
+
+async function factoryReset() {
+  const typed = await ask({ title: 'Factory reset', input: true, ok: 'Erase everything',
+    message: 'This permanently deletes ALL categories, shortcuts, desktop icons and saved icons, and clears saved settings. Back up first if unsure. Type RESET to confirm:' });
+  if (typed === null) return;
+  if (typed !== 'RESET') return toast('Nothing was changed. You must type RESET exactly.', true);
+  try {
+    await api('POST', '/api/reset', {});
+    try { localStorage.clear(); } catch {}
+    location.reload();
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------------- Windows XP theme ---------------- */
+const usage = store.get('usage', {});
+const xp = { open: null, timer: null, balloon: null };
+const isXp = () => document.body.classList.contains('xp');
+const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+function setTheme(t) {
+  if (!['xp', 'w8'].includes(t)) t = 'w8';
+  document.body.classList.toggle('xp', t === 'xp');
+  document.body.classList.toggle('w8', t === 'w8');
+  $('#xp').hidden = t !== 'xp';
+  $('#w8').hidden = t !== 'w8';
+  store.set('theme', t);
+  closeStart(); closeW8();
+  if (t === 'xp') showBalloon();
+  render();
+}
+
+function showBalloon() {
+  const b = $('#balloon');
+  b.hidden = false;
+  clearTimeout(xp.balloon); xp.balloon = setTimeout(() => b.hidden = true, 9000);
+}
+
+function startOpen() { return !$('#startmenu').hidden; }
+function openStart() {
+  $('#balloon').hidden = true;
+  $('#startmenu').hidden = false;
+  $('#startBtn').classList.add('active');
+  $('#xpSearch').value = '';
+  renderXp();
+  $('#xpSearch').focus();
+}
+function closeStart() {
+  closeFly();
+  $('#startmenu').hidden = true;
+  $('#startBtn').classList.remove('active');
+}
+
+function closeFly() {
+  clearTimeout(xp.timer);
+  if (xp.open) { xp.open.classList.remove('open'); xp.open = null; }
+}
+function scheduleClose() { clearTimeout(xp.timer); xp.timer = setTimeout(closeFly, 450); }  // lets the pointer cross to the flyout
+function openFly(li) {
+  clearTimeout(xp.timer);
+  if (xp.open && xp.open !== li) xp.open.classList.remove('open');
+  xp.open = li; li.classList.add('open');
+  const f = li.querySelector('.flyout'), m = $('#startmenu').getBoundingClientRect();
+  const r = li.getBoundingClientRect(), taskbar = 30;
+  f.style.maxHeight = (innerHeight - taskbar - 12) + 'px';
+  f.style.left = Math.max(0, Math.min(m.right - 2, innerWidth - f.offsetWidth - 4)) + 'px';
+  f.style.top = Math.max(6, Math.min(r.top - 2, innerHeight - taskbar - f.offsetHeight - 6)) + 'px';
+}
+
+function xpItem(s, terms, inMain, showCat) {
+  const li = document.createElement('li');
+  li.className = 'xi';
+  li.title = s.type === 'bat' ? s.path : s.url;
+  const nm = document.createElement('span'); nm.className = 'nm'; highlight(nm, s.name, terms);
+  li.append(makeIcon(s), nm);
+  if (showCat) { const c = document.createElement('span'); c.className = 'xcat'; c.textContent = s.category || UNCAT; li.append(c); }
+  const t = document.createElement('span'); t.className = 'xtools';
+  t.append(btn('✎', 'Edit', () => { closeStart(); openDialog(s); }),
+           btn('⟳', 'Re-fetch icon', () => refreshIcon(s)),
+           btn('✕', 'Delete', () => del(s), 'del'));
+  li.append(t);
+  li.onclick = () => { closeStart(); launch(s); };
+  li._ctx = shortcutCtx(s);
+  dragSource(li, s);
+  if (inMain) li.onmouseenter = closeFly;
+  return li;
+}
+
+function xpCategory(cat, list) {
+  const li = document.createElement('li');
+  li.className = 'xc';
+  const fi = document.createElement('span'); fi.className = 'fi'; fi.textContent = '📁';
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = `${cat} (${list.length})`;
+  const t = document.createElement('span'); t.className = 'xtools';
+  if (cat !== UNCAT) t.append(btn('✎', 'Rename', () => renameCat(cat)), btn('✕', 'Delete category', () => delCat(cat), 'del'));
+  const arr = document.createElement('span'); arr.className = 'arr'; arr.textContent = '▶';
+
+  const fly = document.createElement('div'); fly.className = 'flyout';
+  const ul = document.createElement('ul');
+  if (!list.length) { const e = document.createElement('li'); e.className = 'xempty'; e.textContent = '(Empty)'; ul.append(e); }
+  for (const s of list) ul.append(xpItem(s, [], false, false));
+  fly.append(ul);
+
+  li.append(fi, nm, t, arr, fly);
+  if (cat !== UNCAT) li._ctx = catCtx(cat);
+  dropTarget(li, cat === UNCAT ? '' : cat);
+  li.onmouseenter = () => openFly(li);
+  li.onmouseleave = scheduleClose;
+  li.onclick = e => { if (!e.target.closest('.flyout')) xp.open === li ? closeFly() : openFly(li); };
+  return li;
+}
+
+function renderXp() {
+  if (!startOpen()) return;
+  closeFly();
+  const terms = $('#xpSearch').value.toLowerCase().split(/\s+/).filter(Boolean);
+  const ul = $('#xpMain');
+  ul.textContent = '';
+
+  if (terms.length) {                                  // flat search results
+    const hits = shortcuts.filter(s => matches(s, terms)).sort(byName).slice(0, 80);
+    if (!hits.length) { const e = document.createElement('li'); e.className = 'xempty'; e.textContent = 'No matches.'; ul.append(e); }
+    for (const s of hits) ul.append(xpItem(s, terms, true, true));
+    return;
+  }
+
+  const used = shortcuts.filter(s => usage[s.id]).sort((a, b) => usage[b.id] - usage[a.id]).slice(0, 5);
+  for (const s of used) ul.append(xpItem(s, [], true, false));
+  if (used.length) { const sep = document.createElement('li'); sep.className = 'xsep'; ul.append(sep); }
+
+  const groups = new Map(categories.map(c => [c, []]));
+  groups.set(UNCAT, []);
+  for (const s of shortcuts) (groups.get(s.category) || groups.get(UNCAT)).push(s);
+  for (const [cat, list] of groups) {
+    if (cat === UNCAT && !list.length) continue;
+    list.sort(byName);
+    const li = xpCategory(cat, list);
+    ul.append(li);
+  }
+  if (!shortcuts.length && !categories.length) {
+    const e = document.createElement('li'); e.className = 'xempty'; e.textContent = 'Nothing here yet — use “Add shortcut…”'; ul.append(e);
+  }
+}
+
+$('#startBtn').onclick = () => startOpen() ? closeStart() : openStart();
+document.addEventListener('mousedown', e => {
+  if (startOpen() && !e.target.closest('#startmenu, #startBtn')) closeStart();
+});
+$('#xpSearch').addEventListener('input', renderXp);
+$('#xpSearch').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (e.target.value) { e.target.value = ''; renderXp(); } else closeStart(); }
+  if (e.key === 'Enter') { const first = $('#xpMain .xi'); if (first) first.click(); }
+});
+$('#xpAdd').onclick = () => { closeStart(); openDialog(null); };
+$('#xpAddCat').onclick = () => { closeStart(); addCat(); };
+$('#xpEdit').onclick = toggleEdit;
+$('#xpModern').onclick = () => setTheme('w8');
+$('#xpOff').onclick = () => { closeStart(); powerOff(); };
+$('#xpCoffee').onclick = () => { closeStart(); showDonate(); };
+$('#xpBackup').onclick = () => { closeStart(); backupDownload(); };
+$('#xpRestore').onclick = () => { closeStart(); restoreFromZip(); };
+$('#xpReset').onclick = () => { closeStart(); factoryReset(); };
+document.querySelector('.sm-right').addEventListener('mouseenter', scheduleClose);
+
+/* ---------------- Windows 98 menu on a Windows 8 desktop ---------------- */
+const isW8 = () => document.body.classList.contains('w8');
+const w8Open = () => !$('#w8menu').hidden;
+
+function openW8() {
+  $('#w8menu').hidden = false;
+  $('#w8Start').classList.add('active');
+  renderW8();
+  $('#w8Find').focus();
+}
+function closeW8() {
+  $('#w8menu').querySelectorAll('li.open').forEach(l => l.classList.remove('open'));
+  $('#w8menu').hidden = true;
+  $('#w8Start').classList.remove('active');
+}
+
+// --- cascading submenu behaviour: each submenu is a fixed-position child of its parent <li>
+function cancelChain(li) {
+  for (let p = li; p; p = p.parentElement ? p.parentElement.closest('li.mi') : null) clearTimeout(p._t);
+}
+function closeSub(li) {
+  clearTimeout(li._t);
+  li.classList.remove('open');
+  li.querySelectorAll('li.open').forEach(o => { clearTimeout(o._t); o.classList.remove('open'); });
+}
+function closeSiblings(li) {
+  li.parentElement.querySelectorAll(':scope > li.open').forEach(o => { if (o !== li) closeSub(o); });
+}
+function openSub(li) {
+  closeSiblings(li);
+  li.classList.add('open');
+  const sub = li.querySelector(':scope > .w98sub'), r = li.getBoundingClientRect(), bar = 32;
+  sub.style.maxHeight = (innerHeight - bar - 12) + 'px';
+  let left = r.right - 2;
+  if (left + sub.offsetWidth > innerWidth - 4) left = Math.max(4, r.left - sub.offsetWidth + 2);   // flip when out of room
+  sub.style.left = left + 'px';
+  sub.style.top = Math.max(6, Math.min(r.top - 3, innerHeight - bar - sub.offsetHeight - 6)) + 'px';
+}
+function wireSub(li) {
+  li.onmouseenter = () => { cancelChain(li); openSub(li); };
+  li.onmouseleave = () => { li._t = setTimeout(() => closeSub(li), 350); };   // grace period to reach the submenu
+  li.onclick = e => { if (!e.target.closest('.w98sub')) li.classList.contains('open') ? closeSub(li) : openSub(li); };
+}
+
+// --- menu item builders
+function mi(label, { icon = '', iconEl, sub, onClick, tools, disabled, title, keep } = {}) {
+  const li = document.createElement('li');
+  li.className = 'mi' + (disabled ? ' dis' : '');
+  if (title) li.title = title;
+  const ic = document.createElement('span'); ic.className = 'ic';
+  iconEl ? ic.append(iconEl) : (ic.textContent = icon);
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = label;
+  li.append(ic, nm);
+  if (tools) li.append(tools);
+  if (sub) {
+    const arr = document.createElement('span'); arr.className = 'arr'; arr.textContent = '▶';
+    const box = document.createElement('div'); box.className = 'w98sub'; box.append(sub);
+    li.append(arr, box);
+    wireSub(li);
+  } else {
+    li.onmouseenter = () => closeSiblings(li);
+    if (onClick && !disabled) li.onclick = () => { if (!keep) closeW8(); onClick(); };
+  }
+  return li;
+}
+const sepItem = () => Object.assign(document.createElement('li'), { className: 'sep' });
+function toolsOf(...buttons) {
+  const t = document.createElement('span'); t.className = 'xtools'; t.append(...buttons); return t;
+}
+
+function shortcutItem(s) {
+  const li = withCtx(shortcutCtx(s), mi(s.name, {
+    iconEl: makeIcon(s), title: s.type === 'bat' ? s.path : s.url, onClick: () => launch(s),
+    tools: toolsOf(btn('✎', 'Edit', () => { closeW8(); openDialog(s); }),
+                   btn('⟳', 'Re-fetch icon', () => refreshIcon(s)),
+                   btn('✕', 'Delete', () => del(s), 'del')),
+  }));
+  dragSource(li, s);
+  return li;
+}
+
+function categoryItem(cat, list) {
+  const sub = document.createElement('ul');
+  if (!list.length) sub.append(mi('(Empty)', { disabled: true }));
+  list.sort(byName).forEach(s => sub.append(shortcutItem(s)));
+  const li = withCtx(catCtx(cat), mi(cat, {
+    icon: '📁', sub,
+    tools: toolsOf(btn('✎', 'Rename', () => renameCat(cat)), btn('✕', 'Delete category', () => delCat(cat), 'del')),
+  }));
+  dropTarget(li, cat);
+  return li;
+}
+
+function findItem(prev) {
+  const li = document.createElement('li');
+  li.className = 'mi find';
+  const ic = document.createElement('span'); ic.className = 'ic'; ic.textContent = '🔍';
+  const input = document.createElement('input');
+  input.id = 'w8Find'; input.placeholder = 'Find…'; input.autocomplete = 'off'; input.value = prev;
+  const results = document.createElement('ul');
+  const box = document.createElement('div'); box.className = 'w98sub'; box.append(results);
+  li.append(ic, input, box);
+  wireSub(li);
+  li.onclick = null;
+  li.onmouseleave = () => { if (document.activeElement !== input) li._t = setTimeout(() => closeSub(li), 350); };
+
+  const fill = () => {
+    const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+    results.textContent = '';
+    if (!terms.length) return closeSub(li);
+    const hits = shortcuts.filter(s => matches(s, terms)).sort(byName).slice(0, 60);
+    if (!hits.length) results.append(mi('No matches', { disabled: true }));
+    hits.forEach(s => results.append(shortcutItem(s)));
+    openSub(li);
+  };
+  input.oninput = fill;
+  input.onkeydown = e => {
+    if (e.key === 'Enter') { const first = results.querySelector('li.mi:not(.dis)'); if (first) first.click(); }
+    if (e.key === 'Escape') { if (input.value) { input.value = ''; fill(); } else closeW8(); }
+  };
+  if (prev) setTimeout(fill);
+  return li;
+}
+
+function renderW8() {
+  if (!w8Open()) return;
+  const menu = $('#w8menu');
+  const prev = $('#w8Find') ? $('#w8Find').value : '';
+  menu.textContent = '';
+
+  const banner = document.createElement('div');
+  banner.className = 'w98banner';
+  banner.innerHTML = '<b>Tools</b>Manager';
+
+  const groups = new Map(categories.map(c => [c, []]));
+  const loose = [];
+  for (const s of shortcuts) (groups.has(s.category) ? groups.get(s.category) : loose).push(s);
+  const programs = document.createElement('ul');
+  groups.forEach((list, cat) => programs.append(categoryItem(cat, list)));
+  if (loose.length) {
+    if (groups.size) programs.append(sepItem());
+    loose.sort(byName).forEach(s => programs.append(shortcutItem(s)));
+  }
+  if (!programs.children.length) programs.append(mi('(Empty)', { disabled: true }));
+
+  const used = shortcuts.filter(s => usage[s.id]).sort((a, b) => usage[b.id] - usage[a.id]).slice(0, 8);
+  const favorites = document.createElement('ul');
+  used.forEach(s => favorites.append(shortcutItem(s)));
+
+  const editOn = document.body.classList.contains('editing');
+  const theme = (label, t) => mi((document.body.classList.contains(t) ? '● ' : '') + label, { onClick: () => setTheme(t) });
+  const themes = document.createElement('ul');
+  themes.append(theme('Windows XP', 'xp'), theme('Windows 98 + 8', 'w8'));
+  const settings = document.createElement('ul');
+  settings.append(
+    mi('Add shortcut…', { icon: '➕', onClick: () => openDialog(null) }),
+    mi('Add category…', { icon: '🗂️', onClick: addCat }),
+    mi((editOn ? '✓ ' : '') + 'Edit mode', { icon: '✏️', onClick: toggleEdit, keep: true }),
+    sepItem(),
+    mi('Theme', { icon: '🎨', sub: themes }),
+    sepItem(),
+    mi('Backup (download ZIP)…', { icon: '💾', onClick: backupDownload }),
+    mi('Restore from ZIP…', { icon: '📥', onClick: restoreFromZip }),
+    mi('Factory reset…', { icon: '🧹', onClick: factoryReset }));
+
+  const top = document.createElement('ul');
+  top.className = 'w98top';
+  top.append(
+    mi('Programs', { icon: '📂', sub: programs }),
+    mi('Favorites', used.length ? { icon: '⭐', sub: favorites } : { icon: '⭐', disabled: true, title: 'Shortcuts you launch show up here' }),
+    sepItem(),
+    findItem(prev),
+    sepItem(),
+    mi('Settings', { icon: '⚙️', sub: settings }),
+    mi('Buy me a coffee', { icon: '☕', onClick: showDonate }),
+    sepItem(),
+    mi('Shut Down…', { icon: '⏻', onClick: powerOff }));
+  menu.append(banner, top);
+}
+
+$('#w8Start').onclick = () => w8Open() ? closeW8() : openW8();
+document.addEventListener('mousedown', e => {
+  if (w8Open() && !e.target.closest('#w8menu, #w8Start')) closeW8();
+});
+
+const tick = () => {
+  const d = new Date();
+  $('#clock').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  $('#w8Clock').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  $('#w8tray').title = d.toLocaleDateString();
+};
+tick(); setInterval(tick, 15000);
+
+setTheme(store.get('theme', 'w8'));
+load().catch(e => toast(e.message, true));
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Windows batch files must keep Windows (CRLF) line endings, also in "Download ZIP"
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# everything else: let git decide
+* text=auto
+
+# never touch binary files
+*.zip binary
+*.png binary
+*.ico binary

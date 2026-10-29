@@ -1,0 +1,2 @@
+# Tools Manager needs no extra packages.
+# It only uses what already comes with Python, so there is nothing to pip install.
