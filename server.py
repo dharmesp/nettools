@@ -305,9 +305,96 @@ ICON_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+\.(png|jpg|gif|webp|svg|ico)$")
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 
 
+# ---- desktop background picture (one file, data/background.<ext>)
+BG_BASE = os.path.join(DATA_DIR, "background")
+BG_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp"}
+MAX_BG_BYTES = 15 * 1024 * 1024
+
+
+def find_bg():
+    for ext in BG_TYPES:
+        if os.path.isfile(BG_BASE + ext):
+            return BG_BASE + ext
+    return None
+
+
+def remove_bg():
+    for ext in BG_TYPES:
+        try:
+            os.remove(BG_BASE + ext)
+        except OSError:
+            pass
+
+
+def save_bg(data, ext=None):
+    """Store a picture as the background. Only real PNG/JPG/GIF/WEBP data is accepted (checked by content)."""
+    ext = ext or sniff_ext(data, "")
+    if ext not in BG_TYPES or len(data) > MAX_BG_BYTES or len(data) < 100:
+        raise ValueError("Please choose a PNG, JPG, GIF or WEBP picture (up to 15 MB)")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    remove_bg()
+    with open(BG_BASE + ext, "wb") as f:
+        f.write(data)
+
+
+# ---- notes: a small to-do list where every note has a status and a log (data/notes.json)
+NOTES_FILE = os.path.join(DATA_DIR, "notes.json")
+NOTE_LABEL = {"todo": "To do", "doing": "In progress", "waiting": "Waiting", "done": "Done"}
+MAX_LOG_ENTRIES = 1000
+
+
+def load_notes():
+    try:
+        with open(NOTES_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def now_iso():
+    return datetime.datetime.now().astimezone().isoformat(timespec="seconds")   # local time with its UTC offset
+
+
+def clean_title(raw):
+    return " ".join(str(raw or "").split())[:200]
+
+
+def clean_text(raw):
+    return str(raw or "").strip()[:2000]
+
+
+def log_entry(text, system=False, when=None):
+    return {"id": uuid.uuid4().hex[:8], "t": when or now_iso(), "text": text, "sys": system}
+
+
+def clean_notes(raw):
+    """Validate the notes found in a backup. Returns a clean list or raises ValueError."""
+    if not isinstance(raw, list) or len(raw) > 2000:
+        raise ValueError("Backup contents are not valid")
+    out, used = [], set()
+    for r in raw:
+        if not isinstance(r, dict):
+            raise ValueError("Backup contents are not valid")
+        nid = r.get("id") if isinstance(r.get("id"), str) and ID_RE.match(r["id"]) and r["id"] not in used \
+            else uuid.uuid4().hex[:12]
+        used.add(nid)
+        log = []
+        for e in (r.get("log") if isinstance(r.get("log"), list) else [])[:MAX_LOG_ENTRIES]:
+            if isinstance(e, dict) and clean_text(e.get("text")):
+                log.append(log_entry(clean_text(e.get("text")), bool(e.get("sys")), str(e.get("t") or "")[:40] or now_iso()))
+        out.append({
+            "id": nid, "title": clean_title(r.get("title")) or "Untitled",
+            "status": r.get("status") if r.get("status") in NOTE_LABEL else "todo",
+            "created": str(r.get("created") or now_iso())[:40], "updated": str(r.get("updated") or now_iso())[:40],
+            "log": log,
+        })
+    return out
+
+
 def build_backup():
     with db_lock:
-        items, cats = load_db(), load_cats()
+        items, cats, notes = load_db(), load_cats(), load_notes()
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("manifest.json", json.dumps({
@@ -315,15 +402,20 @@ def build_backup():
             "shortcuts": len(items), "categories": len(cats)}, indent=2))
         z.writestr("shortcuts.json", json.dumps(items, indent=2))
         z.writestr("categories.json", json.dumps(cats, indent=2))
+        z.writestr("notes.json", json.dumps(notes, indent=2))
         for it in items:
             icon = it.get("icon")
             if icon and ICON_NAME_RE.match(icon) and os.path.isfile(os.path.join(ICON_DIR, icon)):
                 z.write(os.path.join(ICON_DIR, icon), "icons/" + icon)
+        bg = find_bg()
+        if bg:
+            z.write(bg, "background" + os.path.splitext(bg)[1])
     return buf.getvalue()
 
 
 def parse_backup(data):
-    """Validate a backup ZIP completely and return (items, categories, {icon filename: bytes}). Touches nothing."""
+    """Validate a backup ZIP completely and return (items, categories, {icon filename: bytes}, background, notes).
+    background is (extension, bytes) or None; notes is a clean list or None (backup has no notes). Touches nothing."""
     try:
         z = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
@@ -374,7 +466,16 @@ def parse_backup(data):
         c = clean_cat(c)
         if c and c not in cats:
             cats.append(c)
-    return items, cats, icons
+    bg = None
+    for ext in BG_TYPES:
+        if "background" + ext in names:
+            blob = z.read("background" + ext)
+            real = sniff_ext(blob, "") if len(blob) <= MAX_BG_BYTES else None
+            if real in BG_TYPES:                             # checked by content, not by the file name
+                bg = (real, blob)
+            break
+    notes = clean_notes(json.loads(z.read("notes.json"))) if "notes.json" in names else None
+    return items, cats, icons, bg, notes
 
 
 def wipe_icons():
@@ -386,7 +487,7 @@ def wipe_icons():
                 pass
 
 
-def apply_backup(items, cats, icons):
+def apply_backup(items, cats, icons, bg=None, notes=None):
     with db_lock:
         wipe_icons()
         os.makedirs(ICON_DIR, exist_ok=True)
@@ -395,12 +496,17 @@ def apply_backup(items, cats, icons):
                 f.write(blob)
         write_json(DB_FILE, items)
         write_json(CAT_FILE, cats)
+        if bg:                       # a backup without a background leaves your current background alone
+            save_bg(bg[1], bg[0])
+        if notes is not None:        # same for notes: an older backup without them keeps the notes you have
+            write_json(NOTES_FILE, notes)
 
 
 def factory_reset():
     with db_lock:
         wipe_icons()
-        for p in (DB_FILE, CAT_FILE):
+        remove_bg()
+        for p in (DB_FILE, CAT_FILE, NOTES_FILE):
             if os.path.exists(p):
                 os.remove(p)
 
@@ -493,6 +599,26 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             return self.wend(donate.QR_PNG)
+        if path == "/api/notes":
+            with db_lock:
+                return self.send_json(load_notes())
+        if path == "/api/background/info":
+            p = find_bg()
+            return self.send_json({"set": bool(p), "v": int(os.path.getmtime(p)) if p else 0})
+        if path == "/api/background":
+            p = find_bg()
+            if not p:
+                return self.send_json({"error": "not found"}, 404)
+            with open(p, "rb") as f:
+                body = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", BG_TYPES[os.path.splitext(p)[1]])
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Content-Security-Policy", "sandbox")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            return self.wend(body)
         if path == "/api/export":
             body = build_backup()
             stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M")
@@ -524,11 +650,22 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if parts == ["api", "import"] and method == "POST":
                 try:
-                    items, cats, icons = parse_backup(self.read_body(MAX_BACKUP_BYTES))   # validate everything first
+                    items, cats, icons, bg, notes = parse_backup(self.read_body(MAX_BACKUP_BYTES))   # validate everything first
                 except (zipfile.BadZipFile, KeyError, TypeError, AttributeError, OverflowError, RuntimeError):
                     raise ValueError("The backup file is damaged or not valid")
-                apply_backup(items, cats, icons)
-                return self.send_json({"shortcuts": len(items), "categories": len(cats)})
+                apply_backup(items, cats, icons, bg, notes)
+                return self.send_json({"shortcuts": len(items), "categories": len(cats), "background": bool(bg),
+                                       "notes": None if notes is None else len(notes)})
+            if parts[:2] == ["api", "notes"]:
+                return self.notes_api(method, parts[2:])
+            if parts == ["api", "background"] and method == "POST":
+                with db_lock:
+                    save_bg(self.read_body(MAX_BG_BYTES))
+                return self.send_json({"ok": True})
+            if parts == ["api", "background"] and method == "DELETE":
+                with db_lock:
+                    remove_bg()
+                return self.send_json({"ok": True})
             if parts == ["api", "reset"] and method == "POST":
                 factory_reset()
                 return self.send_json({"ok": True})
@@ -567,6 +704,58 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
 
     # -- actions
+    def notes_api(self, method, rest):
+        with db_lock:
+            notes = load_notes()
+            if method == "POST" and not rest:                                 # new note
+                d = self.read_json()
+                title = clean_title(d.get("title"))
+                if not title:
+                    raise ValueError("Please type a title for the note")
+                t = now_iso()
+                n = {"id": uuid.uuid4().hex[:12], "title": title,
+                     "status": d.get("status") if d.get("status") in NOTE_LABEL else "todo",
+                     "created": t, "updated": t, "log": [log_entry("Note created", True, t)]}
+                notes.append(n)
+                write_json(NOTES_FILE, notes)
+                return self.send_json(n, 201)
+            n = next((x for x in notes if x["id"] == (rest[0] if rest else "")), None)
+            if n is None:
+                return self.send_json({"error": "not found"}, 404)
+            t = now_iso()
+            if method == "PUT" and len(rest) == 1:                           # rename / change status
+                d = self.read_json()
+                if "title" in d:
+                    title = clean_title(d["title"])
+                    if not title:
+                        raise ValueError("The title can't be empty")
+                    n["title"] = title
+                if "status" in d:
+                    if d["status"] not in NOTE_LABEL:
+                        raise ValueError("Unknown status")
+                    if d["status"] != n["status"]:                           # every status change is written to the log
+                        n["log"].append(log_entry(f"Status: {NOTE_LABEL[n['status']]} → {NOTE_LABEL[d['status']]}", True, t))
+                        n["status"] = d["status"]
+                n["updated"] = t
+            elif method == "POST" and len(rest) == 2 and rest[1] == "log":   # add a log line
+                text = clean_text(self.read_json().get("text"))
+                if not text:
+                    raise ValueError("Type something to add to the log")
+                if len(n["log"]) >= MAX_LOG_ENTRIES:
+                    raise ValueError("This note has too many log entries")
+                n["log"].append(log_entry(text, False, t))
+                n["updated"] = t
+            elif method == "DELETE" and len(rest) == 3 and rest[1] == "log":   # remove one log line
+                n["log"] = [e for e in n["log"] if e["id"] != rest[2]]
+                n["updated"] = t
+            elif method == "DELETE" and len(rest) == 1:                      # delete the whole note
+                write_json(NOTES_FILE, [x for x in notes if x is not n])
+                return self.send_json({"ok": True})
+            else:
+                return self.send_json({"error": "not found"}, 404)
+            write_json(NOTES_FILE, notes)
+            return self.send_json(n, 201 if method == "POST" else 200)
+
     def categories(self, method, name):
         with db_lock:
             cats = load_cats()

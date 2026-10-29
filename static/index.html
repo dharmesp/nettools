@@ -13,7 +13,9 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
-         font: 13px/1.35 "Segoe UI", system-ui, sans-serif; min-height: 100vh; }
+         font: 13px/1.35 "Segoe UI", system-ui, sans-serif; min-height: 100vh;
+         -webkit-user-select: none; user-select: none; }                  /* no highlighting of text anywhere */
+  input, textarea { -webkit-user-select: text; user-select: text; }       /* ...except in text boxes, so you can edit */
   input { background: var(--bg); color: var(--text); border: 1px solid var(--line);
           border-radius: 6px; padding: 7px 10px; font: inherit; width: 100%; }
   input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
@@ -216,6 +218,82 @@
   .dicon.sel { background: rgba(49,106,197,.6); border-color: rgba(255,255,255,.8); border-style: dotted; }
   .dicon.dragging { opacity: .45; }
 
+  /* notes: compact list under the clock, and a small old-style window for each note */
+  .notesbox { position: absolute; top: 112px; right: 20px; width: 300px; z-index: 5; pointer-events: none; text-align: left; color: #fff;
+              font: 12px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .notesbox > * { pointer-events: auto; }
+  .nb-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 2px;
+             font: 600 11px "Segoe UI", Tahoma, sans-serif; letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
+  .nb-add, .nb-more { background: none; border: 0; border-radius: 3px; color: #fff; margin: 0; cursor: pointer; text-shadow: inherit; }
+  .nb-add { font-size: 16px; line-height: 1; padding: 0 5px; }
+  .nb-more { font-size: 11px; padding: 2px 6px; opacity: .85; }
+  .nb-add:hover, .nb-more:hover { background: rgba(255,255,255,.2); }
+  .nb-new { display: block; width: 100%; margin: 2px 0 3px; padding: 3px 6px; font: 12px "Segoe UI", Tahoma, sans-serif;
+            color: #000; background: rgba(255,255,255,.93); border: 1px solid rgba(255,255,255,.7); border-radius: 3px; text-shadow: none; }
+  .nb-list { max-height: calc(100vh - 270px); overflow-y: auto; scrollbar-width: thin; }
+  .nb-row { display: flex; align-items: center; gap: 7px; padding: 2px 6px; border-radius: 3px; cursor: default; line-height: 1.25; }
+  .nb-row:hover { background: rgba(255,255,255,.18); }
+  .nb-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #d3dbe6; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+  .nb-dot[data-s="doing"] { background: #ffd23f; } .nb-dot[data-s="waiting"] { background: #ff9a3d; } .nb-dot[data-s="done"] { background: #62d96b; }
+  .nb-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nb-st { flex: none; font-size: 10px; opacity: .8; }
+  .nb-row.done .nb-title { text-decoration: line-through; opacity: .7; }
+  .nb-empty { padding: 2px 6px; opacity: .8; font-style: italic; }
+
+  .winlayer { position: absolute; left: 0; top: 0; right: 0; bottom: 30px; z-index: 25; pointer-events: none; }
+  #layerW8 { bottom: 32px; }
+  .nwin { position: absolute; width: 400px; max-width: calc(100vw - 20px); pointer-events: auto; display: flex; flex-direction: column;
+          color: #000; font: 11px Tahoma, Verdana, sans-serif; background: #ece9d8; border: 3px solid #0054e3; border-top: 0;
+          border-radius: 8px 8px 0 0; box-shadow: 3px 3px 10px rgba(0,0,0,.5); }
+  .nw-bar { display: flex; align-items: center; gap: 6px; padding: 4px 5px 4px 8px; color: #fff; cursor: move; border-radius: 5px 5px 0 0;
+            font: 700 12px "Trebuchet MS", Tahoma, sans-serif; text-shadow: 1px 1px 1px #0a246a;
+            background: linear-gradient(#0997ff, #0053ee 8%, #0050ee 40%, #06f 88%, #0058ee); }
+  .nw-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nw-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .nw-row { display: flex; align-items: center; gap: 6px; }
+  .nw-row > span { width: 44px; flex: none; }
+  .nw-status { display: flex; flex: 1; }
+  .nw-status button { flex: 1; border-radius: 0; padding: 3px 4px; }
+  .nw-logs { height: 170px; overflow-y: auto; scrollbar-width: thin; background: #fff; border: 1px solid #7f9db9; padding: 2px; }
+  .nw-log { display: flex; gap: 6px; align-items: flex-start; padding: 2px 4px; border-bottom: 1px dotted #d4d4d4; }
+  .nw-log.sys { color: #555; font-style: italic; }
+  .nw-time { flex: none; color: #666; white-space: nowrap; }
+  .nw-text { flex: 1; min-width: 0; white-space: pre-wrap; word-break: break-word; -webkit-user-select: text; user-select: text; }
+  .nw-del { flex: none; padding: 0 4px; line-height: 1.2; opacity: .55; }
+  .nw-del:hover { opacity: 1; }
+  .nw-add { display: flex; gap: 6px; }
+  .nw-foot { display: flex; justify-content: space-between; }
+  .nwin button { margin: 0; padding: 3px 10px; font: 11px Tahoma, sans-serif; color: #000; cursor: pointer; white-space: nowrap;
+                 background: linear-gradient(#fff, #ece9d8 85%, #d6d0c0); border: 1px solid #003c74; border-radius: 3px; }
+  .nwin button:hover { background: linear-gradient(#fff, #f3efe0 85%, #e2dccb); box-shadow: inset 0 0 0 2px #f8b330; }
+  .nwin button.on { font-weight: 700; box-shadow: inset 0 0 0 2px #316ac5; background: linear-gradient(#e1ecfb, #c3d6f4); }
+  .nwin .nw-x { width: 21px; height: 21px; padding: 0; color: #fff; font: 700 12px Tahoma, sans-serif; line-height: 1; border: 1px solid #fff;
+                background: linear-gradient(#e8a393, #c9442e); text-shadow: none; }
+  .nwin .nw-x:hover { background: linear-gradient(#f2b6a8, #dc5a43); box-shadow: none; }
+  .nwin input { width: auto; flex: 1; min-width: 0; margin: 0; padding: 3px 5px; font: 11px Tahoma, sans-serif; color: #000;
+                background: #fff; border: 1px solid #7f9db9; border-radius: 0; }
+  .nwin input:focus { outline: 1px solid #316ac5; }
+  body.w8 .nwin { background: #c0c0c0; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0; box-shadow: 1px 1px 0 #000, 4px 4px 10px rgba(0,0,0,.35); }
+  body.w8 .nw-bar { background: linear-gradient(90deg, #000080, #1084d0); border-radius: 0; font: 700 11px Tahoma, sans-serif; text-shadow: none; padding: 3px 3px 3px 6px; }
+  body.w8 .nwin button { background: #c0c0c0; border: 0; border-radius: 0; box-shadow: var(--raised); }
+  body.w8 .nwin button:hover { background: #c0c0c0; box-shadow: var(--raised); }
+  body.w8 .nwin button:active, body.w8 .nwin button.on { box-shadow: var(--sunken); background: #d8d8d8; }
+  body.w8 .nwin .nw-x { width: 18px; height: 16px; background: #c0c0c0; color: #000; border: 0; box-shadow: var(--raised); font-size: 10px; }
+  body.w8 .nwin input, body.w8 .nw-logs { border: 0; box-shadow: var(--sunken); }
+  body.w8 .nwin input:focus { outline: 1px dotted #000; }
+
+  /* your own background picture, drawn under the icons and the clock */
+  .userbg { position: absolute; inset: 0; background: center / cover no-repeat; }
+  #w8.has-bg::before, #w8.has-bg::after { display: none; }
+
+  /* digital clock, top right of the desktop (both themes) */
+  .deskclock { position: absolute; top: 14px; right: 24px; z-index: 5; pointer-events: none; text-align: right; color: #fff;
+               text-shadow: 0 1px 3px rgba(0,0,0,.55), 0 0 10px rgba(0,0,0,.25); font-variant-numeric: tabular-nums; }
+  .dc-time { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; line-height: 1; }
+  .dc-t { font: 300 40px "Segoe UI Light", "Segoe UI", Tahoma, sans-serif; letter-spacing: 1px; }
+  .dc-ap { font: 600 16px "Segoe UI", Tahoma, sans-serif; }
+  .dc-date { margin-top: 6px; font: 600 14px "Segoe UI", Tahoma, sans-serif; opacity: .95; }
+
   /* drop highlight for dragging a shortcut onto a category row */
   #startmenu li.drop { background: #316ac5; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
   #w8 li.mi.drop { background: #000080; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
@@ -353,6 +431,7 @@
   </form>
 </dialog>
 <input type="file" id="restoreFile" accept=".zip,application/zip" hidden>
+<input type="file" id="bgFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
 <dialog id="donateDlg">
   <form method="dialog" id="donateForm">
     <h2>☕ Buy me a coffee</h2>
@@ -381,7 +460,11 @@
 
 <!-- Windows 98 menu on a Windows 8 desktop -->
 <div id="w8" hidden>
+  <div class="userbg" hidden></div>
   <div id="deskW8" class="desk"></div>
+  <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
+  <div class="winlayer" id="layerW8"></div>
+  <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
   <div id="w8menu" hidden></div>
   <div id="w8bar">
     <button id="w8Start"><span class="w98flag"><i></i><i></i><i></i><i></i></span><b>Start</b></button>
@@ -391,7 +474,11 @@
 
 <!-- Windows XP theme: desktop + taskbar + Start menu with category flyouts -->
 <div id="xp" hidden>
+  <div class="userbg" hidden></div>
   <div id="deskXp" class="desk"></div>
+  <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
+  <div class="winlayer" id="layerXp"></div>
+  <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
   <div id="balloon" hidden><b>To begin, click here</b><br>Open the Start menu to find your tools.</div>
   <div id="startmenu" hidden>
     <div class="sm-head"><div class="sm-avatar"><img src="/favicon.svg" alt="" width="38" height="38"></div><span>Tools Manager</span></div>
@@ -405,6 +492,8 @@
           <li id="xpAdd">➕ Add shortcut…</li>
           <li id="xpAddCat">📁 Add category…</li>
           <li id="xpEdit"><span id="xpEditChk" class="chk"></span>✏️ Edit mode</li>
+          <li id="xpBg">🖼️ Change background…</li>
+          <li id="xpBgReset">🔄 Reset background</li>
           <li class="xsep"></li>
           <li id="xpBackup">💾 Backup (ZIP)…</li>
           <li id="xpRestore">📥 Restore (ZIP)…</li>
@@ -571,6 +660,7 @@ const otherTheme = () => isXp() ? ['w8', 'Windows 98 + 8'] : ['xp', 'Windows XP'
 const deskCtx = () => [
   { label: 'New shortcut…', fn: () => openDialog(null) },
   { label: 'New category…', fn: addCat },
+  { label: 'New note…', fn: () => { const i = deskBox().parentElement.querySelector('.nb-new'); i.hidden = false; i.focus(); } },
   { label: (document.body.classList.contains('editing') ? '✓ ' : '') + 'Edit mode', fn: toggleEdit },
   null,
   { label: `Switch to ${otherTheme()[1]} theme`, fn: () => setTheme(otherTheme()[0]) },
@@ -867,6 +957,35 @@ async function powerOff() {
   setTimeout(() => window.close(), 400);
 }
 
+/* ---------------- desktop background picture ---------------- */
+async function loadBackground() {
+  let info = { set: false, v: 0 };
+  try { info = await api('GET', '/api/background/info'); } catch {}
+  const url = info.set ? `url("/api/background?v=${info.v}")` : '';
+  document.querySelectorAll('.userbg').forEach(el => { el.hidden = !info.set; el.style.backgroundImage = url; });
+  $('#xp').classList.toggle('has-bg', info.set);
+  $('#w8').classList.toggle('has-bg', info.set);
+}
+
+const bgInput = $('#bgFile');
+function chooseBackground() { bgInput.value = ''; bgInput.click(); }          // must run straight from a click
+bgInput.onchange = async () => {
+  const f = bgInput.files[0];
+  if (!f) return;
+  if (f.size > 15 * 1024 * 1024) return toast('That picture is too big. Please use one under 15 MB.', true);
+  try {
+    const r = await fetch('/api/background', { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not set the background');
+    await loadBackground();
+    toast('Background changed');
+  } catch (e) { toast(e.message, true); }
+};
+async function resetBackground() {
+  try { await api('DELETE', '/api/background'); await loadBackground(); toast('Background reset'); }
+  catch (e) { toast(e.message, true); }
+}
+
 async function showDonate() {
   $('#donateDlg').showModal();
   try {                                                  // links come from the program (donate.py)
@@ -911,6 +1030,8 @@ restoreInput.onchange = async () => {
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Restore failed');
     await load();
+    if (d.background) await loadBackground();
+    await loadNotes();
     toast(`Restored ${d.shortcuts} shortcuts and ${d.categories} categories`);
   } catch (e) { toast(e.message, true); }
 };
@@ -941,6 +1062,7 @@ function setTheme(t) {
   $('#w8').hidden = t !== 'w8';
   store.set('theme', t);
   closeStart(); closeW8();
+  closeAllNoteWins();                                           // windows live in the theme's own layer
   if (t === 'xp') showBalloon();
   render();
 }
@@ -1072,6 +1194,8 @@ $('#xpEdit').onclick = toggleEdit;
 $('#xpModern').onclick = () => setTheme('w8');
 $('#xpOff').onclick = () => { closeStart(); powerOff(); };
 $('#xpCoffee').onclick = () => { closeStart(); showDonate(); };
+$('#xpBg').onclick = () => { closeStart(); chooseBackground(); };
+$('#xpBgReset').onclick = () => { closeStart(); resetBackground(); };
 $('#xpBackup').onclick = () => { closeStart(); backupDownload(); };
 $('#xpRestore').onclick = () => { closeStart(); restoreFromZip(); };
 $('#xpReset').onclick = () => { closeStart(); factoryReset(); };
@@ -1235,6 +1359,8 @@ function renderW8() {
     mi((editOn ? '✓ ' : '') + 'Edit mode', { icon: '✏️', onClick: toggleEdit, keep: true }),
     sepItem(),
     mi('Theme', { icon: '🎨', sub: themes }),
+    mi('Change background…', { icon: '🖼️', onClick: chooseBackground }),
+    mi('Reset background', { icon: '🔄', onClick: resetBackground }),
     sepItem(),
     mi('Backup (download ZIP)…', { icon: '💾', onClick: backupDownload }),
     mi('Restore from ZIP…', { icon: '📥', onClick: restoreFromZip }),
@@ -1271,6 +1397,191 @@ const tick = () => {
 };
 tick(); setInterval(tick, 15000);
 
+// big desktop clock: your PC's own time as HH:MM AM/PM, then the day and the date as DD-MMM-YYYY
+// (e.g. "Thursday, 29-Oct-2026"). Names are fixed English words so the look never depends on the PC's language.
+const pad2 = n => String(n).padStart(2, '0');
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+function tickDeskClock() {
+  const d = new Date();
+  const time = `${pad2(d.getHours() % 12 || 12)}:${pad2(d.getMinutes())}`;
+  const ampm = d.getHours() < 12 ? 'AM' : 'PM';
+  const date = `${DAYS[d.getDay()]}, ${pad2(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+  document.querySelectorAll('.deskclock').forEach(c => {
+    c.querySelector('.dc-t').textContent = time;
+    c.querySelector('.dc-ap').textContent = ampm;
+    c.querySelector('.dc-date').textContent = date;
+  });
+}
+tickDeskClock(); setInterval(tickDeskClock, 1000);
+
+/* ---------------- notes: compact list + old-style windows ---------------- */
+const NOTE_STATUS = [['todo', 'To do'], ['doing', 'In progress'], ['waiting', 'Waiting'], ['done', 'Done']];
+const NOTE_LABEL = Object.fromEntries(NOTE_STATUS);
+const NOTE_ORDER = { doing: 0, todo: 1, waiting: 2, done: 3 };
+let notes = [], showDoneNotes = false, winZ = 1;
+const noteWins = new Map();                                   // note id -> its open window
+
+const fmtStamp = iso => {
+  const d = new Date(iso);
+  return isNaN(d) ? '' : `${pad2(d.getDate())}-${MONTHS[d.getMonth()]} ${pad2(d.getHours() % 12 || 12)}:${pad2(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
+};
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+async function loadNotes() {
+  try { notes = await api('GET', '/api/notes'); } catch {}
+  renderNotes();
+  noteWins.forEach((w, id) => { const n = notes.find(x => x.id === id); n ? paintNoteWin(w, n) : closeNoteWin(id); });
+}
+
+function renderNotes() {
+  const sorted = [...notes].sort((a, b) => NOTE_ORDER[a.status] - NOTE_ORDER[b.status] || String(b.updated).localeCompare(String(a.updated)));
+  const open = sorted.filter(n => n.status !== 'done'), doneCount = sorted.length - open.length;
+  const rows = showDoneNotes ? sorted : open;
+  document.querySelectorAll('.notesbox').forEach(box => {
+    const list = box.querySelector('.nb-list');
+    list.textContent = '';
+    if (!rows.length) list.append(el('div', 'nb-empty', notes.length ? 'All done. Nice!' : 'No notes yet. Click ＋ to add one.'));
+    for (const n of rows) list.append(noteRow(n));
+    const more = box.querySelector('.nb-more');
+    more.hidden = !doneCount;
+    more.textContent = showDoneNotes ? 'Hide done' : `Show done (${doneCount})`;
+  });
+}
+
+function noteRow(n) {
+  const r = el('div', 'nb-row' + (n.status === 'done' ? ' done' : ''));
+  r.title = `${n.title}\n${NOTE_LABEL[n.status]}`;
+  const dot = el('span', 'nb-dot'); dot.dataset.s = n.status;
+  r.append(dot, el('span', 'nb-title', n.title), el('span', 'nb-st', NOTE_LABEL[n.status]));
+  r.onclick = () => openNote(n.id);
+  r._ctx = [
+    { label: 'Open', fn: () => openNote(n.id) }, null,
+    ...NOTE_STATUS.filter(([k]) => k !== n.status).map(([k, l]) => ({ label: 'Mark as ' + l, fn: () => setNoteStatus(n.id, k) })),
+    null, { label: 'Delete', fn: () => deleteNote(n), danger: true },
+  ];
+  return r;
+}
+
+function wireNotesBoxes() {
+  document.querySelectorAll('.notesbox').forEach(box => {
+    const input = box.querySelector('.nb-new');
+    box.querySelector('.nb-add').onclick = () => { input.hidden = !input.hidden; if (!input.hidden) input.focus(); };
+    input.onkeydown = async e => {
+      if (e.key === 'Escape') { input.value = ''; input.hidden = true; }
+      if (e.key === 'Enter' && input.value.trim()) {                // stays open so you can type the next one
+        const title = input.value; input.value = '';
+        try { await api('POST', '/api/notes', { title }); await loadNotes(); } catch (err) { toast(err.message, true); }
+      }
+    };
+    box.querySelector('.nb-more').onclick = () => { showDoneNotes = !showDoneNotes; renderNotes(); };
+  });
+}
+
+async function setNoteStatus(id, status) {
+  try { await api('PUT', `/api/notes/${id}`, { status }); await loadNotes(); } catch (e) { toast(e.message, true); }
+}
+async function deleteNote(n) {
+  if (!await ask({ title: 'Delete note', message: `Delete "${n.title}" and its whole log?`, ok: 'Delete' })) return;
+  try { await api('DELETE', `/api/notes/${n.id}`); closeNoteWin(n.id); await loadNotes(); } catch (e) { toast(e.message, true); }
+}
+
+const noteLayer = () => $(isXp() ? '#layerXp' : '#layerW8');
+const focusWin = w => { w.style.zIndex = ++winZ; };
+function closeNoteWin(id) { const w = noteWins.get(id); if (w) { w.remove(); noteWins.delete(id); } }
+function closeAllNoteWins() { [...noteWins.keys()].forEach(closeNoteWin); }
+
+function openNote(id) {
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  let w = noteWins.get(id);
+  if (!w) { w = buildNoteWin(id); noteWins.set(id, w); noteLayer().append(w); }
+  paintNoteWin(w, n);
+  focusWin(w);
+  w.querySelector('.nw-log-in').focus();
+}
+
+function buildNoteWin(id) {
+  const w = el('div', 'nwin'), k = noteWins.size;
+  w.style.left = Math.max(10, Math.min(innerWidth - 420, innerWidth * 0.4 - 200 + k * 26)) + 'px';
+  w.style.top = (60 + k * 26) + 'px';
+  w.innerHTML = `
+    <div class="nw-bar"><span>📝</span><span class="nw-name"></span><button type="button" class="nw-x" title="Close">✕</button></div>
+    <div class="nw-body">
+      <div class="nw-row"><span>Title</span><input class="nw-title-in" maxlength="200" autocomplete="off"></div>
+      <div class="nw-row"><span>Status</span><div class="nw-status"></div></div>
+      <div class="nw-logs"></div>
+      <div class="nw-add"><input class="nw-log-in" placeholder="Add a log entry, press Enter" maxlength="2000" autocomplete="off"><button type="button" class="nw-log-btn">Add</button></div>
+      <div class="nw-foot"><button type="button" class="nw-delete">Delete note</button><button type="button" class="nw-close">Close</button></div>
+    </div>`;
+  const q = s => w.querySelector(s);
+  for (const [key, label] of NOTE_STATUS) {
+    const b = el('button', '', label); b.type = 'button'; b.dataset.s = key;
+    b.onclick = () => setNoteStatus(id, key);
+    q('.nw-status').append(b);
+  }
+  w.addEventListener('mousedown', () => focusWin(w));
+  q('.nw-x').onclick = q('.nw-close').onclick = () => closeNoteWin(id);
+  q('.nw-delete').onclick = () => { const n = notes.find(x => x.id === id); if (n) deleteNote(n); };
+
+  const title = q('.nw-title-in');                               // rename when you leave the box or press Enter
+  const rename = async () => {
+    const n = notes.find(x => x.id === id), v = title.value.trim();
+    if (!n || v === n.title) return;
+    if (!v) { title.value = n.title; return; }
+    try { await api('PUT', `/api/notes/${id}`, { title: v }); await loadNotes(); } catch (e) { toast(e.message, true); }
+  };
+  title.onchange = rename;
+  title.onkeydown = e => { if (e.key === 'Enter') title.blur(); };
+
+  const logIn = q('.nw-log-in');
+  const addLog = async () => {
+    const text = logIn.value.trim();
+    if (!text) return;
+    logIn.value = '';
+    try { await api('POST', `/api/notes/${id}/log`, { text }); await loadNotes(); } catch (e) { toast(e.message, true); }
+  };
+  logIn.onkeydown = e => { if (e.key === 'Enter') addLog(); };
+  q('.nw-log-btn').onclick = addLog;
+  q('.nw-logs').addEventListener('click', async e => {
+    const b = e.target.closest('.nw-del');
+    if (!b) return;
+    try { await api('DELETE', `/api/notes/${id}/log/${b.dataset.id}`); await loadNotes(); } catch (err) { toast(err.message, true); }
+  });
+
+  q('.nw-bar').addEventListener('mousedown', e => {              // drag by the title bar
+    if (e.target.closest('button')) return;
+    const r = w.getBoundingClientRect(), lr = noteLayer().getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    const move = ev => {
+      w.style.left = Math.max(0, Math.min(lr.width - 60, ev.clientX - dx - lr.left)) + 'px';
+      w.style.top = Math.max(0, Math.min(lr.height - 30, ev.clientY - dy - lr.top)) + 'px';
+    };
+    const up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', move); addEventListener('mouseup', up);
+    e.preventDefault();
+  });
+  return w;
+}
+
+function paintNoteWin(w, n) {
+  w.querySelector('.nw-name').textContent = n.title;
+  const title = w.querySelector('.nw-title-in');
+  if (document.activeElement !== title) title.value = n.title;
+  w.querySelectorAll('.nw-status button').forEach(b => b.classList.toggle('on', b.dataset.s === n.status));
+  const logs = w.querySelector('.nw-logs'), grew = logs.children.length < n.log.length;
+  logs.textContent = '';
+  for (const e of n.log) {
+    const row = el('div', 'nw-log' + (e.sys ? ' sys' : ''));
+    const del = el('button', 'nw-del', '✕'); del.type = 'button'; del.title = 'Delete this line'; del.dataset.id = e.id;
+    row.append(el('span', 'nw-time', fmtStamp(e.t)), el('span', 'nw-text', e.text), del);
+    logs.append(row);
+  }
+  if (grew) logs.scrollTop = logs.scrollHeight;                  // newest line in view
+}
+
+wireNotesBoxes();
+loadNotes();
+loadBackground();
 setTheme(store.get('theme', 'w8'));
 load().catch(e => toast(e.message, true));
 </script>
