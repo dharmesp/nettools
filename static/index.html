@@ -218,6 +218,17 @@
   .dicon.sel { background: rgba(49,106,197,.6); border-color: rgba(255,255,255,.8); border-style: dotted; }
   .dicon.dragging { opacity: .45; }
 
+  /* pop-up forms: movable title bar and a close button, like a window */
+  dialog h2 { cursor: move; }
+  dialog .dlg-x, body.xp dialog .dlg-x { position: absolute; top: 4px; right: 4px; z-index: 2; width: 21px; height: 21px; min-width: 0; padding: 0; margin: 0;
+                  color: #fff; font: 700 12px Tahoma, sans-serif; line-height: 1; cursor: pointer; border: 1px solid #fff; border-radius: 3px;
+                  background: linear-gradient(#e8a393, #c9442e); text-shadow: none; box-shadow: none; }
+  dialog .dlg-x:hover, body.xp dialog .dlg-x:hover { background: linear-gradient(#f2b6a8, #dc5a43); box-shadow: none; }
+  body.w8 dialog .dlg-x { top: 3px; right: 3px; width: 18px; height: 16px; font-size: 10px; color: #000; background: #c0c0c0;
+                          border: 0; border-radius: 0; box-shadow: var(--raised); }
+  body.w8 dialog .dlg-x:hover { background: #c0c0c0; }
+  body.w8 dialog .dlg-x:active { box-shadow: var(--sunken); }
+
   /* notes: compact list under the clock, and a small old-style window for each note */
   .notesbox { position: absolute; top: 112px; right: 20px; width: 300px; z-index: 5; pointer-events: none; text-align: left; color: #fff;
               font: 12px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
@@ -1414,6 +1425,35 @@ function tickDeskClock() {
   });
 }
 tickDeskClock(); setInterval(tickDeskClock, 1000);
+
+/* ---------------- pop-up forms act like windows: drag by the title bar, close with the ✕ ---------------- */
+document.querySelectorAll('dialog').forEach(dlg => {
+  const bar = dlg.querySelector('h2');
+  if (!bar) return;
+  const x = document.createElement('button');             // lives on the dialog itself, so changing the title text can't remove it
+  x.type = 'button'; x.className = 'dlg-x'; x.title = 'Close'; x.textContent = '✕';
+  x.onclick = () => dlg.close();
+  dlg.append(x);
+
+  let ox = 0, oy = 0;                                      // how far the window has been moved from the centre
+  bar.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const startX = e.clientX - ox, startY = e.clientY - oy;
+    const move = ev => {
+      const r = dlg.getBoundingClientRect(), baseL = r.left - ox, baseT = r.top - oy;   // where it sits without the offset
+      ox = Math.min(innerWidth - 80 - baseL, Math.max(80 - r.width - baseL, ev.clientX - startX));   // title bar never leaves the screen
+      oy = Math.min(innerHeight - 30 - baseT, Math.max(-baseT, ev.clientY - startY));
+      dlg.style.transform = `translate(${ox}px, ${oy}px)`;
+    };
+    const up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', move); addEventListener('mouseup', up);
+    e.preventDefault();
+  });
+  const reset = () => { ox = oy = 0; dlg.style.transform = ''; };
+  const show = dlg.showModal.bind(dlg);
+  dlg.showModal = () => { reset(); show(); };                // every open starts in the centre, whatever happened before
+  dlg.addEventListener('close', reset);
+});
 
 /* ---------------- notes: compact list + old-style windows ---------------- */
 const NOTE_STATUS = [['todo', 'To do'], ['doing', 'In progress'], ['waiting', 'Waiting'], ['done', 'Done']];
