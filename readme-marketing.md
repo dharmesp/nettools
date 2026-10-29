@@ -135,7 +135,7 @@ Because the person who built it loves the old Windows menu. It is a feature, not
 Click **Factory reset**. Or restore your last backup. You did make a backup, right? *Right?*
 
 **Is it free?**
-Yes. Free to download and use.
+Yes. Free to download and use, and the code is open source under the MIT license.
 
 ---
 

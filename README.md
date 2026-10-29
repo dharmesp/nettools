@@ -107,6 +107,10 @@ Everything you create is stored in the `data` folder next to the program (`short
 | `run.bat` | Starts the app |
 | `requirements.txt` | Empty on purpose: no extra packages are needed |
 
+## License
+Released under the **MIT License**. See the [LICENSE](LICENSE) file.
+The website logos that appear as icons in the starter pack belong to their own websites and are not covered by this license.
+
 ## Support the project
 If Tools Manager saves you time, you can [buy me a coffee](https://paypal.me/ainetops).
 Thank you!
