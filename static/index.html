@@ -220,6 +220,53 @@
   #startmenu li.drop { background: #316ac5; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
   #w8 li.mi.drop { background: #000080; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
 
+  /* our own drop-downs and pickers (instead of the browser's native pop-ups) */
+  .combo { position: relative; display: block; margin-top: 4px; }
+  label .combo input { margin-top: 0; padding-right: 30px; }
+  .combo-btn { position: absolute; right: 2px; top: 2px; bottom: 2px; width: 24px; margin: 0; padding: 0; font-size: 9px; line-height: 1; border-radius: 4px; }
+  .combo-list, .pick-list { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+                            overflow-y: auto; scrollbar-width: thin; text-align: left; }
+  .combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: 30; max-height: 160px; box-shadow: 0 8px 20px rgba(0,0,0,.5); }
+  .pick-list { max-height: 210px; margin-bottom: 4px; }
+  .combo-item, .pick-item, .combo-empty { padding: 6px 10px; cursor: default; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .combo-empty { color: var(--muted); font-style: italic; white-space: normal; }
+  .combo-item:hover, .combo-item.hot { background: var(--accent); color: #fff; }
+  .combo-item.sel { font-weight: 700; }
+  .pick-item:hover { background: var(--tile-hover); }
+  .pick-item.sel { background: var(--accent); color: #fff; font-weight: 700; }
+  .pick-list:focus { outline: 2px solid var(--accent); }
+  .seg-wrap { margin-bottom: 12px; }
+  .seg-title { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .seg { display: flex; }
+  .seg button { flex: 1; margin: 0; border-radius: 0; }
+  .seg button:first-child { border-radius: 6px 0 0 6px; }
+  .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .seg button:disabled { opacity: .55; cursor: default; }
+  body.xp .combo-list, body.xp .pick-list { background: #fff; color: #000; border: 1px solid #7f9db9; border-radius: 0;
+                                            font: 11px Tahoma, sans-serif; box-shadow: 2px 2px 4px rgba(0,0,0,.35); }
+  body.xp .combo-item, body.xp .pick-item, body.xp .combo-empty { padding: 3px 6px; }
+  body.xp .combo-empty { color: #666; }
+  body.xp .combo-item:hover, body.xp .combo-item.hot, body.xp .pick-item.sel { background: #316ac5; color: #fff; }
+  body.xp .pick-item:hover:not(.sel) { background: #e1ecfb; }
+  body.xp .combo-btn { min-width: 0; padding: 0; border-radius: 0; color: #000; border: 1px solid #7f9db9;
+                       background: linear-gradient(#dfe9fb, #a9c2ee); }
+  body.xp .pick-list:focus { outline: 1px solid #316ac5; }
+  body.xp .seg-title { color: #000; font-size: 11px; }
+  body.xp .seg button { min-width: 0; border-radius: 0; }
+  body.xp .seg button.on { background: linear-gradient(#cfe0fa, #a9c6f2); box-shadow: inset 0 0 0 2px #316ac5; font-weight: 700; }
+  body.w8 .combo-list, body.w8 .pick-list { background: #fff; color: #000; border: 1px solid #000; border-radius: 0;
+                                            font: 11px Tahoma, Arial, sans-serif; box-shadow: none; }
+  body.w8 .combo-item, body.w8 .pick-item, body.w8 .combo-empty { padding: 3px 6px; }
+  body.w8 .combo-empty { color: #666; }
+  body.w8 .combo-item:hover, body.w8 .combo-item.hot, body.w8 .pick-item.sel { background: #000080; color: #fff; }
+  body.w8 .pick-item:hover:not(.sel) { background: #dfdfdf; }
+  body.w8 .combo-btn { min-width: 0; padding: 0; border-radius: 0; background: #c0c0c0; color: #000; border: 0; box-shadow: var(--raised); }
+  body.w8 .combo-btn:active { box-shadow: var(--sunken); }
+  body.w8 .pick-list:focus { outline: 1px dotted #000; outline-offset: -3px; }
+  body.w8 .seg-title { color: #000; font-size: 11px; }
+  body.w8 .seg button { min-width: 0; border-radius: 0; }
+  body.w8 .seg button.on { box-shadow: var(--sunken); background: #dcdcdc; font-weight: 700; }
+
   /* donate dialog */
   #donateDlg { width: 340px; text-align: center; }
   .donate-text { margin: 0 0 10px; line-height: 1.4; }
@@ -272,11 +319,14 @@
 <dialog id="dlg">
   <form method="dialog" id="form">
     <h2 id="dlgTitle">Add shortcut</h2>
-    <label>Type
-      <select name="type" id="typeSel">
-        <option value="url">Web link</option>
-        <option value="bat">BAT / CMD file</option>
-      </select></label>
+    <div class="seg-wrap">
+      <span class="seg-title">Type</span>
+      <div class="seg" id="typeSeg">
+        <button type="button" data-v="url">Web link</button>
+        <button type="button" data-v="bat">BAT / CMD file</button>
+      </div>
+      <input type="hidden" name="type" id="typeSel" value="url">
+    </div>
     <label id="batFields" hidden>Full path to .bat / .cmd file
       <input name="path" placeholder="C:\tools\my-tool\start.bat" autocomplete="off">
       <span style="display:flex;align-items:center;gap:6px;margin-top:8px">
@@ -285,8 +335,11 @@
     <label><span id="urlLabel">URL</span> <input name="url" id="urlInput" required placeholder="https://example.com"></label>
     <label>Name (optional) <input name="name"></label>
     <label>Category / section
-      <input name="category" list="catlist" placeholder="Pick one or type a new one" autocomplete="off"></label>
-    <datalist id="catlist"></datalist>
+      <span class="combo">
+        <input name="category" id="catInput" placeholder="Pick one or type a new one" autocomplete="off">
+        <button type="button" class="combo-btn" id="catBtn" tabindex="-1" aria-label="Show categories">▼</button>
+        <div class="combo-list" id="catList" hidden></div>
+      </span></label>
     <label>Icon (optional – image URL or local file path; auto-detected from the site if a URL is set)
       <input name="icon_url" placeholder="https://…/logo.png  or  C:\icons\tool.png"></label>
     <div class="row">
@@ -318,7 +371,7 @@
     <h2 id="askTitle"></h2>
     <p id="askMsg" style="margin:0 0 12px"></p>
     <input name="answer" id="askInput" autocomplete="off">
-    <select id="askSelect" hidden></select>
+    <div id="askList" class="pick-list" tabindex="0" hidden></div>
     <div class="actions">
       <button type="button" id="askCancel">Cancel</button>
       <button type="submit" class="primary" id="askOk">OK</button>
@@ -567,7 +620,6 @@ function render() {
 
 async function load() {
   [shortcuts, categories] = await Promise.all([api('GET', '/api/shortcuts'), api('GET', '/api/categories')]);
-  $('#catlist').replaceChildren(...categories.map(c => Object.assign(document.createElement('option'), { value: c })));
   render();
 }
 
@@ -587,28 +639,96 @@ async function refreshIcon(s) {
 // (choices mode, [[value, label], ...]), true, or null if cancelled
 function ask({ title, message = '', input = false, choices = null, value = '', ok = 'OK' }) {
   return new Promise(resolve => {
-    const dlg = $('#askDlg'), inp = $('#askInput'), sel = $('#askSelect');
-    let result = null;
+    const dlg = $('#askDlg'), inp = $('#askInput'), list = $('#askList');
+    let result = null, chosen = value;
     $('#askTitle').textContent = title;
     $('#askMsg').textContent = message;
     inp.hidden = !input; inp.value = value;
-    sel.hidden = !choices;
-    if (choices) {
-      sel.replaceChildren(...choices.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
-      sel.value = value;
+    list.hidden = !choices;
+    if (choices) {                                       // our own list, not the browser's <select> pop-up
+      const paint = () => list.querySelectorAll('.pick-item').forEach(el => el.classList.toggle('sel', el.dataset.v === chosen));
+      list.replaceChildren(...choices.map(([v, label]) => {
+        const d = document.createElement('div');
+        d.className = 'pick-item'; d.dataset.v = v; d.textContent = label;
+        d.onclick = () => { chosen = v; paint(); };
+        d.ondblclick = () => $('#askForm').requestSubmit();
+        return d;
+      }));
+      paint();
+      list.onkeydown = e => {
+        const items = [...list.children];
+        let i = items.findIndex(x => x.dataset.v === chosen);
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          i = Math.max(0, Math.min(items.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)));
+          chosen = items[i].dataset.v; paint(); items[i].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') { e.preventDefault(); $('#askForm').requestSubmit(); }
+      };
     }
     $('#askOk').textContent = ok;
     $('#askForm').onsubmit = e => {
       e.preventDefault();
-      result = choices ? sel.value : input ? inp.value.trim() : true;
+      result = choices ? chosen : input ? inp.value.trim() : true;
       dlg.close();
     };
     $('#askCancel').onclick = () => dlg.close();
     dlg.onclose = () => resolve(result);
     dlg.showModal();
-    if (input) { inp.focus(); inp.select(); } else if (choices) sel.focus(); else $('#askOk').focus();
+    if (input) { inp.focus(); inp.select(); }
+    else if (choices) { list.focus(); const s = list.querySelector('.sel'); if (s) s.scrollIntoView({ block: 'nearest' }); }
+    else $('#askOk').focus();
   });
 }
+
+// a text box with a drop-down of our own (themed, always shows the categories you created)
+function setupCombo(input, listEl, btn, getItems) {
+  let hot = -1;
+  const rows = () => [...listEl.querySelectorAll('.combo-item')];
+  const close = () => { listEl.hidden = true; hot = -1; };
+  function pick(v) { input.value = v; close(); input.focus(); }
+  function open(filter = '') {
+    const q = filter.trim().toLowerCase();
+    const items = getItems().filter(it => !q || it.l.toLowerCase().includes(q)).filter(it => it.v || !q);
+    listEl.textContent = '';
+    if (!items.length) {
+      const e = document.createElement('div'); e.className = 'combo-empty';
+      e.textContent = q ? `New category: “${filter.trim()}”` : 'No categories yet. Type a name to create one.';
+      listEl.append(e);
+    }
+    for (const it of items) {
+      const d = document.createElement('div');
+      d.className = 'combo-item' + (it.v === input.value ? ' sel' : '');
+      d.textContent = it.l;
+      d.onmousedown = e => e.preventDefault();           // keep focus in the text box
+      d.onclick = e => { e.preventDefault(); pick(it.v); };
+      d._v = it.v;
+      listEl.append(d);
+    }
+    hot = -1; listEl.hidden = false;
+  }
+  input.addEventListener('focus', () => open(''));
+  input.addEventListener('click', () => { if (listEl.hidden) open(''); });
+  input.addEventListener('input', () => open(input.value));
+  input.addEventListener('blur', () => setTimeout(close, 100));
+  input.addEventListener('keydown', e => {
+    if (listEl.hidden) { if (e.key === 'ArrowDown') { e.preventDefault(); open(''); } return; }
+    const r = rows();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!r.length) return;
+      hot = (hot + (e.key === 'ArrowDown' ? 1 : -1) + r.length) % r.length;
+      r.forEach((el, i) => el.classList.toggle('hot', i === hot));
+      r[hot].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && hot >= 0) { e.preventDefault(); pick(r[hot]._v); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }   // close the list, not the dialog
+  });
+  btn.onmousedown = e => e.preventDefault();
+  btn.onclick = () => { if (listEl.hidden) { input.focus(); open(''); } else close(); };
+  return close;
+}
+const closeCatList = setupCombo($('#catInput'), $('#catList'), $('#catBtn'),
+  () => [{ v: '', l: 'Uncategorized' }, ...categories.map(c => ({ v: c, l: c }))]);
+$('#dlg').addEventListener('close', closeCatList);
 
 // move a shortcut to another category ('' = Uncategorized)
 async function moveTo(id, cat) {
@@ -669,13 +789,17 @@ async function delCat(cat) {
 }
 
 function syncType() {
-  const bat = $('#typeSel').value === 'bat';
+  const sel = $('#typeSel'), bat = sel.value === 'bat';
+  $('#typeSeg').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === sel.value); b.disabled = sel.disabled; });
   $('#batFields').hidden = !bat;
   $('#form').path.required = bat;
   $('#urlInput').required = !bat;
   $('#urlLabel').textContent = bat ? 'URL to open once started (optional – e.g. http://localhost:5000)' : 'URL';
 }
-$('#typeSel').onchange = syncType;
+$('#typeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && !b.disabled) { $('#typeSel').value = b.dataset.v; syncType(); }
+});
 
 function openDialog(s) {
   editingId = s ? s.id : null;
@@ -1108,8 +1232,6 @@ function renderW8() {
   themes.append(theme('Windows XP', 'xp'), theme('Windows 98 + 8', 'w8'));
   const settings = document.createElement('ul');
   settings.append(
-    mi('Add shortcut…', { icon: '➕', onClick: () => openDialog(null) }),
-    mi('Add category…', { icon: '🗂️', onClick: addCat }),
     mi((editOn ? '✓ ' : '') + 'Edit mode', { icon: '✏️', onClick: toggleEdit, keep: true }),
     sepItem(),
     mi('Theme', { icon: '🎨', sub: themes }),
@@ -1123,6 +1245,9 @@ function renderW8() {
   top.append(
     mi('Programs', { icon: '📂', sub: programs }),
     mi('Favorites', used.length ? { icon: '⭐', sub: favorites } : { icon: '⭐', disabled: true, title: 'Shortcuts you launch show up here' }),
+    sepItem(),
+    mi('Add shortcut…', { icon: '➕', onClick: () => openDialog(null) }),
+    mi('Add category…', { icon: '🗂️', onClick: addCat }),
     sepItem(),
     findItem(prev),
     sepItem(),
