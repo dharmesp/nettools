@@ -6,6 +6,12 @@ A tiny local launcher for the web tools and `.bat` scripts you use every day. Ev
 
 It runs entirely on your own PC at `http://localhost:8000`. There is no account, no cloud and no tracking.
 
+## Watch the demo
+
+<a href="https://www.youtube.com/shorts/nrv7vpu5-y4"><img src="https://img.youtube.com/vi/nrv7vpu5-y4/maxresdefault.jpg" alt="Watch the Tools Manager demo on YouTube" width="480"></a>
+
+Click the picture to watch a short video of Tools Manager in action.
+
 ## Easy setup (3 steps)
 
 **Step 1. Get the files.**
