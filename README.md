@@ -14,6 +14,10 @@ Click the picture to watch a short video of Tools Manager in action.
 
 ## Easy setup (3 steps)
 
+![How to set up Tools Manager on a new PC: download the ZIP, extract it, run install.bat, use the Desktop icon](docs/setup-guide.png)
+
+*Click the picture to see it bigger. The steps are written out below too.*
+
 **Step 1. Get the files.**
 On this GitHub page, click the green **Code** button, then click **Download ZIP**.
 Open the ZIP file and click **Extract all**. (Do not run things from inside the ZIP.)
