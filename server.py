@@ -388,8 +388,8 @@ def tcp_ping_ms(ip, port, timeout=0.8):
     return round((time.perf_counter() - t0) * 1000, 2)
 
 
-def find_gateway():
-    """The default gateway with the best (lowest) metric, read from the routing table; None when offline."""
+def find_default_route():
+    """(gateway, this PC's address on that connection) of the default route with the best (lowest) metric; None when offline."""
     try:
         out = subprocess.run(["route", "print", "-4", "0.0.0.0"], capture_output=True, text=True, timeout=6,
                              stdin=subprocess.DEVNULL, creationflags=0x08000000).stdout
@@ -397,10 +397,15 @@ def find_gateway():
         return None
     best = None
     for line in out.splitlines():
-        m = re.match(r"^\s*0\.0\.0\.0\s+0\.0\.0\.0\s+(\d+\.\d+\.\d+\.\d+)\s+\d+\.\d+\.\d+\.\d+\s+(\d+)\s*$", line)
-        if m and (best is None or int(m.group(2)) < best[0]):
-            best = (int(m.group(2)), m.group(1))
-    return best[1] if best else None
+        m = re.match(r"^\s*0\.0\.0\.0\s+0\.0\.0\.0\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+)\s*$", line)
+        if m and (best is None or int(m.group(3)) < best[0]):
+            best = (int(m.group(3)), m.group(1), m.group(2))
+    return (best[1], best[2]) if best else None
+
+
+def find_gateway():
+    r = find_default_route()
+    return r[0] if r else None
 
 
 def _run(cmd, timeout=6):
@@ -425,6 +430,49 @@ class _FixedInfo(ctypes.Structure):
                 ("CurrentDnsServer", ctypes.POINTER(_IpAddrString)), ("DnsServerList", _IpAddrString),
                 ("NodeType", ctypes.c_uint), ("ScopeId", ctypes.c_char * 260), ("EnableRouting", ctypes.c_uint),
                 ("EnableProxy", ctypes.c_uint), ("EnableDns", ctypes.c_uint)]
+
+
+class _AdapterInfo(ctypes.Structure):
+    pass
+
+
+_AdapterInfo._fields_ = [("Next", ctypes.POINTER(_AdapterInfo)), ("ComboIndex", ctypes.c_ulong), ("AdapterName", ctypes.c_char * 260),
+                         ("Description", ctypes.c_char * 132), ("AddressLength", ctypes.c_uint), ("Address", ctypes.c_ubyte * 8),
+                         ("Index", ctypes.c_ulong), ("Type", ctypes.c_uint), ("DhcpEnabled", ctypes.c_uint),
+                         ("CurrentIpAddress", ctypes.c_void_p), ("IpAddressList", _IpAddrString)]
+
+
+def adapters():
+    """[(adapter type number, [its IPv4 addresses])] straight from Windows (no program started, any language)."""
+    try:
+        lib = ctypes.WinDLL("iphlpapi")
+        size = ctypes.c_ulong(0)
+        lib.GetAdaptersInfo(None, ctypes.byref(size))
+        buf = ctypes.create_string_buffer(size.value)
+        if lib.GetAdaptersInfo(buf, ctypes.byref(size)) != 0:
+            return []
+        out, cur = [], ctypes.cast(buf, ctypes.POINTER(_AdapterInfo))
+        while cur and len(out) < 64:
+            a = cur.contents
+            ips, node = [], ctypes.pointer(a.IpAddressList)
+            while node and len(ips) < 16:
+                ip = node.contents.IpAddress.decode("ascii", "ignore")
+                if ip and ip != "0.0.0.0":
+                    ips.append(ip)
+                node = node.contents.Next
+            out.append((a.Type, ips))
+            cur = a.Next
+        return out
+    except Exception:
+        return []
+
+
+def link_kind(ip):
+    """'ethernet' (cable), 'wifi' or 'other' (VPN, virtual...) for the connection that owns this address; None if unknown."""
+    for typ, ips in adapters():
+        if ip in ips:
+            return {6: "ethernet", 71: "wifi"}.get(typ, "other")
+    return None
 
 
 def dns_servers():
@@ -620,7 +668,7 @@ class NetMonitor:
         self.lock = threading.Lock()
         self.targets = load_net_targets()
         self.series = {k: collections.deque(maxlen=self.KEEP) for k in ("gateway", "internet", *[t["id"] for t in self.targets])}
-        self.gateway, self.target, self.via = None, self.GOOGLE[0], "icmp"
+        self.gateway, self.target, self.via, self.link = None, self.GOOGLE[0], "icmp", None
         self.dns, self.wifi, self.sysinfo, self.vpn = {"server": None, "ms": None}, None, {}, []
         self.outages = load_outages()
         self._open, self._nulls, self._first_null = {}, {"gateway": 0, "internet": 0}, {}
@@ -646,7 +694,7 @@ class NetMonitor:
     def snapshot(self):
         with self.lock:
             now, since = time.time(), time.time() - 86400
-            return {"now": now, "window": self.WINDOW, "gateway": self.gateway, "internet": self.target, "via": self.via,
+            return {"now": now, "window": self.WINDOW, "gateway": self.gateway, "link": self.link, "internet": self.target, "via": self.via,
                     "gw": list(self.series["gateway"])[-(self.WINDOW + 30):], "inet": list(self.series["internet"])[-(self.WINDOW + 30):],
                     "dns": dict(self.dns), "wifi": self.wifi, "sys": dict(self.sysinfo), "vpn": list(self.vpn),
                     "outages24": sum(1 for e in self.outages if e["start"] >= since), "down_now": sorted(self._open)}
@@ -753,9 +801,10 @@ class NetMonitor:
         while self.active():
             t0 = time.time()
             if t0 - checked > 30 or not self.gateway:                # the gateway changes when you switch Wi-Fi or connect a VPN
-                gw = find_gateway()
+                route = find_default_route()
+                gw, link = (route[0], link_kind(route[1])) if route else (None, None)
                 with self.lock:
-                    self.gateway = gw
+                    self.gateway, self.link = gw, link
                 checked = t0
             ms = icmp_ping_ms(self.gateway) if self.gateway else None
             with self.lock:

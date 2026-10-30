@@ -281,6 +281,7 @@
   .nm-chart { cursor: pointer; pointer-events: auto; }
   .nm-line.dns i { background: #7fd8ff; box-shadow: 0 0 6px #7fd8ff; }
   .nm-line.wifi i { background: #d9a6ff; box-shadow: 0 0 6px #d9a6ff; }
+  .nm-line.wifi.idle { opacity: .6; }
   .nm-line.pc i { background: #ffffff; opacity: .7; }
   .nm-line.pc .nm-name { flex: none; }
   .nm-line.pc .nm-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -1635,7 +1636,7 @@ function closeFly() {
   clearTimeout(xp.timer);
   if (xp.open) { xp.open.classList.remove('open'); xp.open = null; }
 }
-function scheduleClose() { clearTimeout(xp.timer); xp.timer = setTimeout(closeFly, 450); }  // lets the pointer cross to the flyout
+function scheduleClose() { clearTimeout(xp.timer); xp.timer = setTimeout(() => { if (ctxMenu.hidden) closeFly(); }, 450); }  // lets the pointer cross to the flyout; waits while a right-click menu is open
 function openFly(li) {
   clearTimeout(xp.timer);
   if (xp.open && xp.open !== li) xp.open.classList.remove('open');
@@ -1766,7 +1767,7 @@ function renderXp() {
 
 $('#startBtn').onclick = () => startOpen() ? closeStart() : openStart();
 document.addEventListener('mousedown', e => {
-  if (startOpen() && !e.target.closest('#startmenu, #startBtn')) closeStart();
+  if (startOpen() && !e.target.closest('#startmenu, #startBtn, #ctx')) closeStart();
 });
 $('#xpSearch').addEventListener('input', renderXp);
 $('#xpSearch').addEventListener('keydown', e => {
@@ -1832,7 +1833,7 @@ function openSub(li) {
 }
 function wireSub(li) {
   li.onmouseenter = () => { cancelChain(li); openSub(li); };
-  li.onmouseleave = () => { li._t = setTimeout(() => closeSub(li), 350); };   // grace period to reach the submenu
+  li.onmouseleave = () => { li._t = setTimeout(() => { if (ctxMenu.hidden) closeSub(li); }, 350); };   // grace period to reach the submenu; menus stay while a right-click menu is open
   li.onclick = e => { if (!e.target.closest('.w98sub')) li.classList.contains('open') ? closeSub(li) : openSub(li); };
 }
 
@@ -1918,7 +1919,7 @@ function findItem(prev) {
   li.append(ic, input, box);
   wireSub(li);
   li.onclick = null;
-  li.onmouseleave = () => { if (document.activeElement !== input) li._t = setTimeout(() => closeSub(li), 350); };
+  li.onmouseleave = () => { if (document.activeElement !== input) li._t = setTimeout(() => { if (ctxMenu.hidden) closeSub(li); }, 350); };
 
   const fill = () => {
     const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
@@ -2010,7 +2011,7 @@ function renderW8() {
 
 $('#w8Start').onclick = () => w8Open() ? closeW8() : openW8();
 document.addEventListener('mousedown', e => {
-  if (w8Open() && !e.target.closest('#w8menu, #w8Start')) closeW8();
+  if (w8Open() && !e.target.closest('#w8menu, #w8Start, #ctx')) closeW8();
 });
 
 const tick = () => {
@@ -2666,16 +2667,20 @@ function renderNetExtras(box, d) {
   dv.className = 'nm-val' + (ms == null && d.dns && d.dns.server ? ' bad' : ms > 150 ? ' warn' : '');
   dns.title = 'How long your DNS server takes to answer one lookup. Slow DNS feels like a slow internet even when ping is fine.';
 
+  const LINK = { ethernet: 'the Ethernet cable', wifi: 'Wi-Fi', other: 'a VPN or virtual connection' };
+  const gwLine = box.querySelector('.nm-line.gw');
+  if (d.link && LINK[d.link]) gwLine.title += `\nYour traffic goes out over ${LINK[d.link]}`;
   const wf = box.querySelector('.nm-line.wifi');
   wf.hidden = !d.wifi;
   if (d.wifi) {
-    const w = d.wifi;
+    const w = d.wifi, idle = d.link === 'ethernet';                // connected to Wi-Fi, but the cable is carrying the traffic
+    wf.classList.toggle('idle', idle);
     wf.querySelector('.nm-name').textContent = 'Wi-Fi ' + w.ssid;
     const v = wf.querySelector('.nm-val');
-    v.textContent = w.signal != null ? w.signal + '%' : '';
-    v.className = 'nm-val' + (w.signal != null && w.signal < 40 ? ' warn' : '');
-    wf.querySelector('.nm-sub').textContent = [w.channel ? 'ch ' + w.channel : '', w.band || ''].filter(Boolean).join(' · ');
-    wf.title = `Signal ${w.signal}% · ${w.radio || ''} · ${w.band || ''} · channel ${w.channel || '?'} · ${w.rate || '?'} Mbps`;
+    v.textContent = idle ? 'not in use' : (w.signal != null ? w.signal + '%' : '');
+    v.className = 'nm-val' + (!idle && w.signal != null && w.signal < 40 ? ' warn' : '');
+    wf.querySelector('.nm-sub').textContent = idle ? 'cable in use' : [w.channel ? 'ch ' + w.channel : '', w.band || ''].filter(Boolean).join(' · ');
+    wf.title = `Signal ${w.signal}% · ${w.radio || ''} · ${w.band || ''} · channel ${w.channel || '?'} · ${w.rate || '?'} Mbps` + (idle ? '\nConnected, but your traffic goes out over the Ethernet cable' : '');
   }
 
   const s = d.sys || {}, pc = box.querySelector('.nm-line.pc'), pv = pc.querySelector('.nm-val');
@@ -2787,6 +2792,7 @@ function paintNetWin() {
   if (n.dns) parts.push(`<b>DNS</b> ${n.dns.server || 'none found'}${n.dns.ms != null ? ' · ' + fmtMs(n.dns.ms) + ' ms' : n.dns.server ? ' · no answer' : ''}`);
   if (n.wifi) parts.push(`<b>Wi-Fi</b> ${n.wifi.ssid} · signal ${n.wifi.signal}% · channel ${n.wifi.channel || '?'} · ${[n.wifi.radio, n.wifi.band].filter(Boolean).join(' ')} · ${n.wifi.rate || '?'} Mbps`);
   else parts.push('<b>Wi-Fi</b> not connected (cable, or no Wi-Fi)');
+  if (n.link) parts.unshift('<b>Connection in use</b> ' + ({ ethernet: 'Ethernet cable', wifi: 'Wi-Fi', other: 'VPN or virtual connection' }[n.link] || n.link));
   parts.push('<b>VPN</b> ' + (n.vpn && n.vpn.length ? n.vpn.join(', ') : 'none detected'));
   const s = n.sys || {};
   if (s.mem != null) parts.push(`<b>PC</b> CPU ${s.cpu != null ? s.cpu + '%' : '–'} · memory ${s.mem}% · ${s.disk} ${s.disk_free}% free`);
