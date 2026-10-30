@@ -752,7 +752,7 @@ class NetMonitor:
         checked = 0.0
         while self.active():
             t0 = time.time()
-            if t0 - checked > 20 or not self.gateway:                # the gateway changes when you switch Wi-Fi or connect a VPN
+            if t0 - checked > 30 or not self.gateway:                # the gateway changes when you switch Wi-Fi or connect a VPN
                 gw = find_gateway()
                 with self.lock:
                     self.gateway = gw
@@ -847,12 +847,12 @@ class NetMonitor:
                 with self.lock:
                     self.dns = {"server": servers[0] if servers else None, "ms": ms}
                 last["dns"] = time.time()
-            if now - last["wifi"] >= 5:
+            if now - last["wifi"] >= (15 if self.wifi else 60):      # netsh costs ~150 ms of CPU per call, so ask rarely; a cable PC almost never
                 w = wifi_info()
                 with self.lock:
                     self.wifi = w
                 last["wifi"] = time.time()
-            if now - last["vpn"] >= 15:
+            if now - last["vpn"] >= 60:
                 v = vpn_adapters()
                 with self.lock:
                     self.vpn = v

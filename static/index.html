@@ -231,7 +231,7 @@
   body.w8 dialog .dlg-x:active { box-shadow: var(--sunken); }
 
   /* notes: compact list under the clock, and a small old-style window for each note */
-  .rightcol { position: absolute; top: 106px; right: 20px; width: 272px; z-index: 5; pointer-events: none;
+  .rightcol { position: absolute; top: 74px; right: 20px; width: 272px; z-index: 5; pointer-events: none;
               display: flex; flex-direction: column; gap: 8px; }
   .notesbox { position: relative; pointer-events: none; text-align: left; color: #fff;
               font: 12px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
@@ -247,7 +247,9 @@
   .cal-wd { padding: 1px 0 2px; font-size: 10px; letter-spacing: .05em; opacity: .75; }
   .cal-d { height: 24px; display: grid; place-items: center; }
   .cal-d > span { width: 22px; height: 22px; line-height: 22px; border-radius: 50%; }
-  .cal-d.we { opacity: .85; }
+  .cal-d.we, .cal-wd.we { background: rgba(255, 110, 110, .17); }          /* Saturday and Sunday: a light red column */
+  .cal-wd.we { color: #ffc2c2; opacity: 1; }
+  .cal-d.we:not(.hol):not(.today) > span { font-style: italic; opacity: .62; }   /* weekend dates: italic and quieter (holidays and today still stand out) */
   .cal-d.out { opacity: .38; }
   .cal-d.hol { pointer-events: auto; cursor: default; }
   .cal-d.hol > span { background: rgba(255, 82, 82, .62); font-weight: 600; }
@@ -414,7 +416,6 @@
   .dc-time { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; line-height: 1; }
   .dc-t { font: 300 40px "Segoe UI Light", "Segoe UI", Tahoma, sans-serif; letter-spacing: 1px; }
   .dc-ap { font: 600 16px "Segoe UI", Tahoma, sans-serif; }
-  .dc-date { margin-top: 6px; font: 600 14px "Segoe UI", Tahoma, sans-serif; opacity: .95; }
 
   /* drop highlight for dragging a shortcut onto a category row */
   #startmenu li.drop { background: #316ac5; color: #fff; outline: 1px dotted #fff; outline-offset: -2px; }
@@ -497,14 +498,13 @@
   .nb-ic.doing::before { inset: 1px; border: 2.5px solid rgba(255, 210, 63, .3); border-top-color: #ffd23f; border-radius: 50%; animation: ic-spin .85s linear infinite; }
   .nb-ic.waiting::before { inset: 1px; border: 2px solid #ffa94d; border-radius: 50%; }
   .nb-ic.waiting::after { left: 7px; top: 3px; width: 2px; height: 5px; background: #ffa94d; border-radius: 1px; transform-origin: 1px 5px; animation: ic-spin 2.4s linear infinite; }
-  .nb-ic.done::before { inset: 1px; border-radius: 50%; background: #3ecf5d; box-shadow: 0 0 0 0 rgba(62, 207, 93, .7); animation: ic-pop .5s ease-out, ic-glow 2.6s ease-out .5s infinite; }
+  .nb-ic.done::before { inset: 1px; border-radius: 50%; background: #3ecf5d; animation: ic-pop .5s ease-out; }
   .nb-ic.done::after { left: 5.3px; top: 3.2px; width: 4px; height: 7.5px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); animation: ic-pop .5s ease-out; }
   @keyframes ic-spin { to { transform: rotate(360deg); } }
   @keyframes ic-pulse { 0%, 100% { transform: scale(.78); opacity: .55; } 50% { transform: scale(1); opacity: 1; } }
   @keyframes ic-pop { 0% { transform: scale(0) rotate(0deg); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .nb-ic.done::after { animation-name: ic-pop-check; }
   @keyframes ic-pop-check { 0% { transform: scale(0) rotate(45deg); } 70% { transform: scale(1.25) rotate(45deg); } 100% { transform: scale(1) rotate(45deg); } }
-  @keyframes ic-glow { 0% { box-shadow: 0 0 0 0 rgba(62, 207, 93, .65); } 70%, 100% { box-shadow: 0 0 0 6px rgba(62, 207, 93, 0); } }
   @media (prefers-reduced-motion: reduce) { .nb-ic::before, .nb-ic::after { animation: none !important; } }
   .nw-status .nb-ic { margin-right: 5px; vertical-align: -3px; }
   .nw-status .nb-ic.todo::before { border-color: #666; }
@@ -536,6 +536,11 @@
   .dt-wd { padding: 2px 0; font-size: 10px; font-weight: 700; color: #666; }
   .dt-d { padding: 4px 0; cursor: default; font-size: 12px; }
   .dt-d.out { color: #a0a0a0; }
+  .dt-d.we, .dt-wd.we { background: #fdeaea; }
+  .dt-d.we:not(.out):not(.sel) { font-style: italic; color: #7a7a7a; }
+  body.w8 .dt-d.we, body.w8 .dt-wd.we { background: #f6dede; }
+  .dt-d.we.sel { background: #316ac5; }
+  body.w8 .dt-d.we.sel { background: #000080; }
   .dt-d:hover { background: #dbe7fb; }
   .dt-d.today { box-shadow: inset 0 0 0 1px #c9442e; }
   .dt-d.sel { background: #316ac5; color: #fff; font-weight: 700; }
@@ -745,7 +750,7 @@
   </div>
   <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span><span class="nm-vpn" hidden>VPN</span><button type="button" class="nm-det" title="Open the network details window">Details</button><button type="button" class="nm-snd" title="Sound alerts">🔔</button></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line dns"><i></i><span class="nm-name">DNS</span><span class="nm-val"></span><span class="nm-sub">lookup</span></div><div class="nm-line wifi" hidden><i></i><span class="nm-name">Wi-Fi</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line pc"><i></i><span class="nm-name">PC</span><span class="nm-val"></span></div></div>
   <div class="winlayer" id="layerW8"></div>
-  <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
+  <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div></div>
   <div id="w8menu" hidden></div>
   <div id="w8bar">
     <button id="w8Start"><span class="w98flag"><i></i><i></i><i></i><i></i></span><b>Start</b></button>
@@ -763,7 +768,7 @@
   </div>
   <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span><span class="nm-vpn" hidden>VPN</span><button type="button" class="nm-det" title="Open the network details window">Details</button><button type="button" class="nm-snd" title="Sound alerts">🔔</button></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line dns"><i></i><span class="nm-name">DNS</span><span class="nm-val"></span><span class="nm-sub">lookup</span></div><div class="nm-line wifi" hidden><i></i><span class="nm-name">Wi-Fi</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line pc"><i></i><span class="nm-name">PC</span><span class="nm-val"></span></div></div>
   <div class="winlayer" id="layerXp"></div>
-  <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
+  <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div></div>
   <div id="balloon" hidden><b>To begin, click here</b><br>Open the Start menu to find your tools.</div>
   <div id="startmenu" hidden>
     <div class="sm-head"><div class="sm-avatar"><img src="/favicon.svg" alt="" width="38" height="38"></div><span>Tools Manager</span></div>
@@ -1528,6 +1533,11 @@ const xp = { open: null, timer: null, balloon: null };
 const isXp = () => document.body.classList.contains('xp');
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
+// Each theme has its own copy of the clock, calendar, notes and network box. Only the copy you can see is updated;
+// the other one is refreshed when you switch themes. (Updating both doubled the work for nothing.)
+const live = sel => ($(isXp() ? '#xp' : '#w8') || document).querySelectorAll(sel);
+let lastNet = null;
+
 function setTheme(t) {
   if (!['xp', 'w8'].includes(t)) t = 'w8';
   document.body.classList.toggle('xp', t === 'xp');
@@ -1540,6 +1550,9 @@ function setTheme(t) {
   closeNetWin();
   if (t === 'xp') showBalloon();
   render();
+  tickDeskClock.s = null; renderCalNext.sig = null;               // the other theme's copies are out of date: redraw them
+  tickDeskClock();
+  if (typeof calReady !== 'undefined' && calReady) { renderCalendar(); renderNotes(); if (lastNet) renderNet(lastNet); }
 }
 
 function showBalloon() {
@@ -1955,17 +1968,18 @@ tick(); setInterval(tick, 15000);
 // (e.g. "Thursday, 29-Oct-2026"). Names are fixed English words so the look never depends on the PC's language.
 const pad2 = n => String(n).padStart(2, '0');
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 function tickDeskClock() {
   const d = new Date();
   const time = `${pad2(d.getHours() % 12 || 12)}:${pad2(d.getMinutes())}`;
   const ampm = d.getHours() < 12 ? 'AM' : 'PM';
-  const date = `${DAYS[d.getDay()]}, ${pad2(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
-  document.querySelectorAll('.deskclock').forEach(c => {
-    c.querySelector('.dc-t').textContent = time;
-    c.querySelector('.dc-ap').textContent = ampm;
-    c.querySelector('.dc-date').textContent = date;
-  });
+  const s = tickDeskClock.s || (tickDeskClock.s = {});
+  if (s.time !== time || s.ampm !== ampm) {                                // changes once a minute, not every second
+    s.time = time; s.ampm = ampm;
+    live('.deskclock').forEach(c => {
+      c.querySelector('.dc-t').textContent = time;
+      c.querySelector('.dc-ap').textContent = ampm;
+    });
+  }
   const dayKey = d.toDateString();                       // a new day starts: move the calendar's circle to the new date
   if (dayKey !== tickDeskClock.day) { tickDeskClock.day = dayKey; if (calReady) renderCalendar(); }
   if (calReady) renderCalNext();                         // the countdown ticks
@@ -2026,11 +2040,11 @@ function pickDateTime({ value = '', withTime = true, title = 'Pick a date', allo
       q('#dtTitle').textContent = title;
       q('.dt-month').textContent = `${MONTH_NAMES[vm]} ${vy}`;
       const grid = q('.dt-grid'); grid.textContent = '';
-      for (const w of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) grid.append(el('div', 'dt-wd', w));
-      const start = new Date(vy, vm, 1 - new Date(vy, vm, 1).getDay());
+      ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach((w, i) => grid.append(el('div', 'dt-wd' + (i > 4 ? ' we' : ''), w)));
+      const start = new Date(vy, vm, 1 - (new Date(vy, vm, 1).getDay() + 6) % 7);
       for (let i = 0; i < 42; i++) {
         const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = keyOf(d);
-        const c = el('div', 'dt-d' + (d.getMonth() !== vm ? ' out' : '') + (k === sel ? ' sel' : '') + (k === keyOf(today) ? ' today' : ''), d.getDate());
+        const c = el('div', 'dt-d' + (d.getDay() === 0 || d.getDay() === 6 ? ' we' : '') + (d.getMonth() !== vm ? ' out' : '') + (k === sel ? ' sel' : '') + (k === keyOf(today) ? ' today' : ''), d.getDate());
         c.onclick = () => setDay(d);
         c.ondblclick = () => q('#dtOk').click();
         grid.append(c);
@@ -2132,11 +2146,16 @@ function renderCalNext() {
   for (const n of notes) if (n.due && n.status !== 'done' && dueTime(n.due).getTime() > now) cands.push({ t: dueTime(n.due).getTime(), label: `Due: ${n.title}` });
   cands.sort((a, b) => (b.now ? 1 : 0) - (a.now ? 1 : 0) || a.t - b.t);
   const over = notes.filter(n => n.due && n.status !== 'done' && dueTime(n.due).getTime() < now).length;
-  document.querySelectorAll('.cal-upnext').forEach(box => {
+  const c = cands[0];
+  const line = c ? (c.now ? (c.left ? `${c.label} · ends in ${fmtIn(c.left)}` : c.label) : `Next: ${c.label} · in ${fmtIn(c.t - now)}`) : '';
+  const warn = over ? `⚠ ${over} note${over > 1 ? 's' : ''} overdue` : '';
+  const sig = line + '|' + warn;
+  if (sig === renderCalNext.sig) return;                          // nothing changed: leave the page alone
+  renderCalNext.sig = sig;
+  live('.cal-upnext').forEach(box => {
     box.textContent = '';
-    const c = cands[0];
-    if (c) box.append(el('div', '', c.now ? (c.left ? `${c.label} · ends in ${fmtIn(c.left)}` : c.label) : `Next: ${c.label} · in ${fmtIn(c.t - now)}`));
-    if (over) box.append(el('div', 'over', `⚠ ${over} note${over > 1 ? 's' : ''} overdue`));
+    if (line) box.append(el('div', '', line));
+    if (warn) box.append(el('div', 'over', warn));
   });
 }
 
@@ -2146,16 +2165,16 @@ function renderCalendar() {
   const Y = shown.getFullYear(), M = shown.getMonth();
   const holidays = new Map();                             // look at the years around, so a day off in late December / early January is found
   for (const yr of [Y - 1, Y, Y + 1]) for (const h of usHolidays(yr)) if (!holidays.has(`${h.y}-${h.m}-${h.d}`)) holidays.set(`${h.y}-${h.m}-${h.d}`, h);
-  const start = new Date(Y, M, 1 - shown.getDay());       // the Sunday on or before the 1st; always 6 rows so the box never jumps in height
+  const start = new Date(Y, M, 1 - (shown.getDay() + 6) % 7);   // the Monday on or before the 1st; always 6 rows so the box never jumps in height
   const thisMonth = [...holidays.values()].filter(h => h.y === Y && h.m === M).sort((a, b) => a.d - b.d);
   const caption = thisMonth.map(h => `${h.d} ${h.name}${h.observed ? ' (observed)' : ''}`).join(' · ');
   const todayKey = keyOf(now);
 
-  document.querySelectorAll('.calbox').forEach(box => {
+  live('.calbox').forEach(box => {
     box.querySelector('.cal-title').textContent = `${MONTH_NAMES[M]} ${Y}`;
     const grid = box.querySelector('.cal-grid');
     grid.textContent = '';
-    for (const w of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) grid.append(el('div', 'cal-wd', w));
+    ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach((w, i) => grid.append(el('div', 'cal-wd' + (i > 4 ? ' we' : ''), w)));
     for (let i = 0; i < 42; i++) {
       const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), key = keyOf(d);
       const cell = el('div', 'cal-d');
@@ -2201,7 +2220,7 @@ function renderCalendar() {
       panel.append(add);
     }
   });
-  renderCalNext();
+  renderCalNext.sig = null; renderCalNext();
 }
 
 // ---- the event form
@@ -2522,8 +2541,10 @@ function renderNet(d) {
     line.querySelector('.nm-sub').textContent = `${Math.round(st.loss)}% loss`;
     line.title = st.n ? `Last minute: average ${fmtMs(st.avg)} ms, best ${fmtMs(st.min)}, worst ${fmtMs(st.max)}, jitter ${fmtMs(st.jitter)} ms, ${Math.round(st.loss)}% lost` : '';
   };
-  netSound(level);
-  document.querySelectorAll('.netbox').forEach(box => {
+  netSound(level);                                                // the alarm always runs, even when the window is hidden
+  lastNet = d;
+  if (document.hidden) return;                                    // minimized: nobody can see the chart, so do not draw it
+  live('.netbox').forEach(box => {
     box.classList.toggle('alarm', level === 'bad');
     box.querySelector('.nm-dot').className = 'nm-dot ' + level;
     box.querySelector('.nm-verdict').textContent = text;
@@ -2735,7 +2756,13 @@ function hoverNetWin(e, cv) {
   netWin.el.querySelector('.nd-hover').textContent = clockText(t) + (bits.length ? '  —  ' + bits.join('  ·  ') : '');
 }
 
-async function pollNet() { try { renderNet(await api('GET', '/api/net')); } catch {} }
+let lastPoll = 0;
+async function pollNet() {
+  if (document.hidden && Date.now() - lastPoll < 5000) return;     // hidden: ask every 5 s instead of every second (alarms still work)
+  lastPoll = Date.now();
+  try { renderNet(await api('GET', '/api/net')); } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && netOn) pollNet(); });
 function startNet() {
   document.querySelectorAll('.netbox').forEach(b => { b.hidden = !netOn; });
   if (netOn && !netTimer) { pollNet(); netTimer = setInterval(pollNet, 1000); }
@@ -2803,7 +2830,7 @@ function renderNotes() {
   const sorted = [...notes].sort((a, b) => NOTE_ORDER[a.status] - NOTE_ORDER[b.status] || String(b.updated).localeCompare(String(a.updated)));
   const open = sorted.filter(n => n.status !== 'done'), doneCount = sorted.length - open.length;
   const rows = showDoneNotes ? sorted : open;
-  document.querySelectorAll('.notesbox').forEach(box => {
+  live('.notesbox').forEach(box => {
     const list = box.querySelector('.nb-list');
     list.textContent = '';
     if (!rows.length) list.append(el('div', 'nb-empty', notes.length ? 'All done. Nice!' : 'No notes yet. Click ＋ to add one.'));
