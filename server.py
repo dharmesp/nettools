@@ -3,6 +3,8 @@
 Run:  python server.py [--no-open]
 Stdlib only. Data lives in ./data (shortcuts.json + icons/).
 """
+import collections
+import ctypes
 import datetime
 import io
 import json
@@ -12,6 +14,7 @@ import re
 import shutil
 import socket
 import ssl
+import struct
 import subprocess
 import sys
 import threading
@@ -33,6 +36,7 @@ DATA_DIR = os.environ.get("TOOLS_DATA_DIR") or os.path.join(ROOT, "data")
 ICON_DIR = os.path.join(DATA_DIR, "icons")
 DB_FILE = os.path.join(DATA_DIR, "shortcuts.json")
 CAT_FILE = os.path.join(DATA_DIR, "categories.json")
+MENU_FILE = os.path.join(DATA_DIR, "menu.json")            # {"dividers": [category names]}: a line is drawn under each of these
 MAIN_URL = f"http://localhost:{PORT}/"
 ALLOWED_HOSTS = {f"localhost:{PORT}", f"127.0.0.1:{PORT}"}
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -72,6 +76,25 @@ def load_cats():
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
+
+
+def load_dividers():
+    try:
+        with open(MENU_FILE, encoding="utf-8") as f:
+            return [d for d in json.load(f).get("dividers", []) if isinstance(d, str)]
+    except (FileNotFoundError, json.JSONDecodeError, AttributeError):
+        return []
+
+
+def save_dividers(dividers, cats=None):
+    """Keep only dividers that belong to a real category (no duplicates), and save them."""
+    cats = load_cats() if cats is None else cats
+    keep = []
+    for d in dividers:
+        if d in cats and d not in keep:
+            keep.append(d)
+    write_json(MENU_FILE, {"dividers": keep})
+    return keep
 
 
 def clean_cat(raw):
@@ -297,6 +320,171 @@ def clamp(v, default, lo=300, hi=4000):
         return default
 
 
+# ---------------------------------------------------------------- network monitor: latency to the gateway and to Google DNS
+class _IcmpOptions(ctypes.Structure):
+    _fields_ = [("Ttl", ctypes.c_ubyte), ("Tos", ctypes.c_ubyte), ("Flags", ctypes.c_ubyte),
+                ("OptionsSize", ctypes.c_ubyte), ("OptionsData", ctypes.c_void_p)]
+
+
+class _IcmpEchoReply(ctypes.Structure):          # ICMP_ECHO_REPLY from iphlpapi
+    _fields_ = [("Address", ctypes.c_uint32), ("Status", ctypes.c_uint32), ("RoundTripTime", ctypes.c_uint32),
+                ("DataSize", ctypes.c_ushort), ("Reserved", ctypes.c_ushort), ("Data", ctypes.c_void_p),
+                ("Options", _IcmpOptions)]
+
+
+_icmp_dll = None
+
+
+def _icmp_lib():
+    global _icmp_dll
+    if _icmp_dll is None and sys.platform == "win32":
+        lib = ctypes.WinDLL("iphlpapi", use_last_error=True)
+        lib.IcmpCreateFile.restype = ctypes.c_void_p
+        lib.IcmpCloseHandle.argtypes = [ctypes.c_void_p]
+        lib.IcmpSendEcho.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_ushort,
+                                     ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+        lib.IcmpSendEcho.restype = ctypes.c_uint32
+        _icmp_dll = lib
+    return _icmp_dll
+
+
+def icmp_ping_ms(ip, timeout_ms=1000):
+    """One ICMP echo through Windows' own API (no ping.exe, no console flash). Returns milliseconds or None."""
+    lib = _icmp_lib()
+    if not lib or not ip:
+        return None
+    handle = lib.IcmpCreateFile()
+    if handle in (None, 0, ctypes.c_void_p(-1).value):
+        return None
+    try:
+        data = b"ToolsMgr"
+        size = ctypes.sizeof(_IcmpEchoReply) + len(data) + 8
+        buf = ctypes.create_string_buffer(size)
+        addr = struct.unpack("<L", socket.inet_aton(ip))[0]
+        t0 = time.perf_counter()
+        n = lib.IcmpSendEcho(handle, addr, data, len(data), None, buf, size, timeout_ms)
+        ms = (time.perf_counter() - t0) * 1000
+        if n == 0 or _IcmpEchoReply.from_buffer(buf).Status != 0:
+            return None
+        return round(ms, 2)
+    finally:
+        lib.IcmpCloseHandle(handle)
+
+
+def tcp_ping_ms(ip, port, timeout=0.8):
+    """Time to open a TCP connection: a stand-in for ping when a firewall blocks ICMP."""
+    t0 = time.perf_counter()
+    try:
+        with socket.create_connection((ip, port), timeout=timeout):
+            pass
+    except OSError:
+        return None
+    return round((time.perf_counter() - t0) * 1000, 2)
+
+
+def find_gateway():
+    """The default gateway with the best (lowest) metric, read from the routing table; None when offline."""
+    try:
+        out = subprocess.run(["route", "print", "-4", "0.0.0.0"], capture_output=True, text=True, timeout=6,
+                             stdin=subprocess.DEVNULL, creationflags=0x08000000).stdout
+    except Exception:
+        return None
+    best = None
+    for line in out.splitlines():
+        m = re.match(r"^\s*0\.0\.0\.0\s+0\.0\.0\.0\s+(\d+\.\d+\.\d+\.\d+)\s+\d+\.\d+\.\d+\.\d+\s+(\d+)\s*$", line)
+        if m and (best is None or int(m.group(2)) < best[0]):
+            best = (int(m.group(2)), m.group(1))
+    return best[1] if best else None
+
+
+class NetMonitor:
+    """Pings the gateway and Google DNS once a second, but only while a page is watching (/api/net was asked recently)."""
+    WINDOW = 120                                   # seconds of history kept and drawn
+    GOOGLE = ("8.8.8.8", "8.8.4.4")                # anycast: the internet routes each to a nearby Google location
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.gw = collections.deque(maxlen=self.WINDOW + 30)      # [time, ms or None]
+        self.inet = collections.deque(maxlen=self.WINDOW + 30)
+        self.gateway, self.target, self.via = None, self.GOOGLE[0], "icmp"
+        self.last_request = 0.0
+        self._threads = {}
+        self._icmp_fail, self._tcp_until = 0, 0.0
+
+    def active(self):
+        return time.time() - self.last_request < 12
+
+    def touch(self):
+        self.last_request = time.time()
+        for name, fn in (("gw", self._gateway_loop), ("net", self._internet_loop)):
+            t = self._threads.get(name)
+            if not (t and t.is_alive()):
+                self._threads[name] = threading.Thread(target=fn, daemon=True)
+                self._threads[name].start()
+
+    def snapshot(self):
+        with self.lock:
+            return {"now": time.time(), "window": self.WINDOW, "gateway": self.gateway, "internet": self.target,
+                    "via": self.via, "gw": list(self.gw), "inet": list(self.inet)}
+
+    def _gateway_loop(self):
+        checked = 0.0
+        while self.active():
+            t0 = time.time()
+            if t0 - checked > 20 or not self.gateway:                # the gateway changes when you switch Wi-Fi or connect a VPN
+                gw = find_gateway()
+                with self.lock:
+                    self.gateway = gw
+                checked = t0
+            ms = icmp_ping_ms(self.gateway) if self.gateway else None
+            with self.lock:
+                self.gw.append([time.time(), ms])
+            time.sleep(max(0.0, 1.0 - (time.time() - t0)))
+
+    def _probe(self, ip):
+        """ICMP first; if a firewall blocks it, a TCP connect to Google instead (and remember to skip ICMP for a minute)."""
+        if time.time() >= self._tcp_until:
+            ms = icmp_ping_ms(ip)
+            if ms is not None:
+                self.via, self._icmp_fail = "icmp", 0
+                return ms
+            self._icmp_fail += 1
+        for port in (443, 53):
+            ms = tcp_ping_ms(ip, port)
+            if ms is not None:
+                self.via = "tcp"
+                if self._icmp_fail >= 5:
+                    self._tcp_until = time.time() + 60
+                return ms
+        return None
+
+    def _pick_target(self):
+        """Of the two Google DNS addresses, use the one that answers faster from here."""
+        best = None
+        for ip in self.GOOGLE:
+            got = [m for m in (self._probe(ip) for _ in range(3)) if m is not None]
+            if got and (best is None or sum(got) / len(got) < best[0]):
+                best = (sum(got) / len(got), ip)
+        if best:
+            with self.lock:
+                self.target = best[1]
+
+    def _internet_loop(self):
+        picked = 0.0
+        while self.active():
+            t0 = time.time()
+            if t0 - picked > 300:
+                self._pick_target()
+                picked = time.time()
+            ms = self._probe(self.target)
+            with self.lock:
+                self.inet.append([time.time(), ms])
+            time.sleep(max(0.0, 1.0 - (time.time() - t0)))
+
+
+NET = NetMonitor()
+
+
 # ---------------------------------------------------------------- backup / restore / reset
 BACKUP_APP = "tools-manager-backup"
 MAX_BACKUP_BYTES = 64 * 1024 * 1024          # upload size
@@ -394,7 +582,7 @@ def clean_notes(raw):
 
 def build_backup():
     with db_lock:
-        items, cats, notes = load_db(), load_cats(), load_notes()
+        items, cats, notes, dividers = load_db(), load_cats(), load_notes(), load_dividers()
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("manifest.json", json.dumps({
@@ -403,6 +591,7 @@ def build_backup():
         z.writestr("shortcuts.json", json.dumps(items, indent=2))
         z.writestr("categories.json", json.dumps(cats, indent=2))
         z.writestr("notes.json", json.dumps(notes, indent=2))
+        z.writestr("menu.json", json.dumps({"dividers": dividers}, indent=2))
         for it in items:
             icon = it.get("icon")
             if icon and ICON_NAME_RE.match(icon) and os.path.isfile(os.path.join(ICON_DIR, icon)):
@@ -475,7 +664,12 @@ def parse_backup(data):
                 bg = (real, blob)
             break
     notes = clean_notes(json.loads(z.read("notes.json"))) if "notes.json" in names else None
-    return items, cats, icons, bg, notes
+    dividers = None
+    if "menu.json" in names:
+        raw = json.loads(z.read("menu.json"))
+        if isinstance(raw, dict) and isinstance(raw.get("dividers"), list):
+            dividers = [clean_cat(x) for x in raw["dividers"] if isinstance(x, str)]
+    return items, cats, icons, bg, notes, dividers
 
 
 def wipe_icons():
@@ -487,7 +681,7 @@ def wipe_icons():
                 pass
 
 
-def apply_backup(items, cats, icons, bg=None, notes=None):
+def apply_backup(items, cats, icons, bg=None, notes=None, dividers=None):
     with db_lock:
         wipe_icons()
         os.makedirs(ICON_DIR, exist_ok=True)
@@ -496,6 +690,7 @@ def apply_backup(items, cats, icons, bg=None, notes=None):
                 f.write(blob)
         write_json(DB_FILE, items)
         write_json(CAT_FILE, cats)
+        save_dividers(dividers if dividers is not None else load_dividers(), cats)   # only those that match the restored categories
         if bg:                       # a backup without a background leaves your current background alone
             save_bg(bg[1], bg[0])
         if notes is not None:        # same for notes: an older backup without them keeps the notes you have
@@ -506,7 +701,7 @@ def factory_reset():
     with db_lock:
         wipe_icons()
         remove_bg()
-        for p in (DB_FILE, CAT_FILE, NOTES_FILE):
+        for p in (DB_FILE, CAT_FILE, NOTES_FILE, MENU_FILE):
             if os.path.exists(p):
                 os.remove(p)
 
@@ -602,6 +797,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/notes":
             with db_lock:
                 return self.send_json(load_notes())
+        if path == "/api/menu":
+            with db_lock:
+                return self.send_json({"dividers": load_dividers()})
+        if path == "/api/net":
+            NET.touch()                                  # starts the pings if they are not running; they stop on their own when nobody asks
+            return self.send_json(NET.snapshot())
         if path == "/api/background/info":
             p = find_bg()
             return self.send_json({"set": bool(p), "v": int(os.path.getmtime(p)) if p else 0})
@@ -650,12 +851,27 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if parts == ["api", "import"] and method == "POST":
                 try:
-                    items, cats, icons, bg, notes = parse_backup(self.read_body(MAX_BACKUP_BYTES))   # validate everything first
+                    items, cats, icons, bg, notes, dividers = parse_backup(self.read_body(MAX_BACKUP_BYTES))   # validate everything first
                 except (zipfile.BadZipFile, KeyError, TypeError, AttributeError, OverflowError, RuntimeError):
                     raise ValueError("The backup file is damaged or not valid")
-                apply_backup(items, cats, icons, bg, notes)
+                apply_backup(items, cats, icons, bg, notes, dividers)
                 return self.send_json({"shortcuts": len(items), "categories": len(cats), "background": bool(bg),
                                        "notes": None if notes is None else len(notes)})
+            if parts == ["api", "category-order"] and method == "PUT":     # drag-and-drop: the whole new order
+                order = self.read_json().get("order")
+                with db_lock:
+                    cats = load_cats()
+                    if (not isinstance(order, list) or not all(isinstance(c, str) for c in order)
+                            or len(set(order)) != len(order) or sorted(order) != sorted(cats)):
+                        raise ValueError("The new order does not match your categories")
+                    write_json(CAT_FILE, order)
+                return self.send_json(order)
+            if parts == ["api", "menu"] and method == "PUT":                # dividers
+                d = self.read_json().get("dividers")
+                if not isinstance(d, list):
+                    raise ValueError("dividers must be a list")
+                with db_lock:
+                    return self.send_json({"dividers": save_dividers([x for x in d if isinstance(x, str)])})
             if parts[:2] == ["api", "notes"]:
                 return self.notes_api(method, parts[2:])
             if parts == ["api", "background"] and method == "POST":
@@ -778,7 +994,9 @@ class Handler(BaseHTTPRequestHandler):
                     if i.get("category") == name:
                         i["category"] = new
                 save_db(items)
-                write_json(CAT_FILE, [new if c == name else c for c in cats])
+                renamed = [new if c == name else c for c in cats]
+                write_json(CAT_FILE, renamed)
+                save_dividers([new if d == name else d for d in load_dividers()], renamed)   # the line stays with the category
                 return self.send_json(load_cats())
             if method == "DELETE":  # shortcuts fall back to "Uncategorized"
                 items = load_db()
@@ -786,7 +1004,9 @@ class Handler(BaseHTTPRequestHandler):
                     if i.get("category") == name:
                         i["category"] = ""
                 save_db(items)
-                write_json(CAT_FILE, [c for c in cats if c != name])
+                remaining = [c for c in cats if c != name]
+                write_json(CAT_FILE, remaining)
+                save_dividers(load_dividers(), remaining)
                 return self.send_json(load_cats())
         self.send_json({"error": "not found"}, 404)
 

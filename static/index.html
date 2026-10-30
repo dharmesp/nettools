@@ -230,8 +230,30 @@
   body.w8 dialog .dlg-x:active { box-shadow: var(--sunken); }
 
   /* notes: compact list under the clock, and a small old-style window for each note */
-  .notesbox { position: absolute; top: 112px; right: 20px; width: 300px; z-index: 5; pointer-events: none; text-align: left; color: #fff;
+  .rightcol { position: absolute; top: 106px; right: 20px; width: 272px; z-index: 5; pointer-events: none;
+              display: flex; flex-direction: column; gap: 8px; }
+  .notesbox { position: relative; pointer-events: none; text-align: left; color: #fff;
               font: 12px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+
+  /* month calendar: between the clock and the notes */
+  .calbox { color: #fff; font: 11px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.65); pointer-events: none; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 0 2px; }
+  .cal-title { font: 600 13px "Segoe UI", Tahoma, sans-serif; padding: 1px 8px; border-radius: 3px; cursor: pointer; pointer-events: auto; }
+  .cal-prev, .cal-next { margin: 0; padding: 0 9px 2px; background: none; border: 0; border-radius: 3px; color: #fff; text-shadow: inherit;
+                         font-size: 19px; line-height: 1; cursor: pointer; pointer-events: auto; }
+  .cal-title:hover, .cal-prev:hover, .cal-next:hover { background: rgba(255,255,255,.22); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+  .cal-wd { padding: 1px 0 2px; font-size: 10px; letter-spacing: .05em; opacity: .75; }
+  .cal-d { height: 24px; display: grid; place-items: center; }
+  .cal-d > span { width: 22px; height: 22px; line-height: 22px; border-radius: 50%; }
+  .cal-d.we { opacity: .85; }
+  .cal-d.out { opacity: .38; }
+  .cal-d.hol { pointer-events: auto; cursor: default; }
+  .cal-d.hol > span { background: rgba(255, 82, 82, .62); font-weight: 600; }
+  .cal-d.today > span { box-shadow: 0 0 0 2px #ffd23f; font-weight: 700; }
+  .cal-d.today:not(.hol) > span { background: rgba(255, 210, 63, .22); }
+  .cal-hol { padding: 3px 2px 0; font-size: 10px; line-height: 1.35; opacity: .95; }
+  .cal-hol:empty { display: none; }
   .notesbox > * { pointer-events: auto; }
   .nb-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 2px;
              font: 600 11px "Segoe UI", Tahoma, sans-serif; letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
@@ -241,7 +263,25 @@
   .nb-add:hover, .nb-more:hover { background: rgba(255,255,255,.2); }
   .nb-new { display: block; width: 100%; margin: 2px 0 3px; padding: 3px 6px; font: 12px "Segoe UI", Tahoma, sans-serif;
             color: #000; background: rgba(255,255,255,.93); border: 1px solid rgba(255,255,255,.7); border-radius: 3px; text-shadow: none; }
-  .nb-list { max-height: calc(100vh - 270px); overflow-y: auto; scrollbar-width: thin; }
+  .nb-list { max-height: max(90px, calc(100vh - 640px)); overflow-y: auto; scrollbar-width: thin; }
+
+  /* network monitor: bottom right, just above the taskbar */
+  .netbox { position: absolute; right: 20px; bottom: 40px; width: 272px; z-index: 5; pointer-events: none; color: #fff;
+            font: 11px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+  .nm-head { display: flex; align-items: center; gap: 7px; padding: 0 2px 4px; font: 600 12px "Segoe UI", Tahoma, sans-serif; }
+  .nm-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #9aa5b1; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+  .nm-dot.ok { background: #4be06a; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 9px #4be06a; }
+  .nm-dot.warn { background: #ffb02e; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 9px #ffb02e; }
+  .nm-dot.bad { background: #ff4d4d; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 9px #ff4d4d; }
+  .nm-chart { display: block; width: 272px; height: 78px; background: rgba(0, 12, 34, .38); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; }
+  .nm-line { display: flex; align-items: center; gap: 6px; padding: 3px 2px 0; white-space: nowrap; pointer-events: auto; }
+  .nm-line i { flex: none; width: 12px; height: 3px; border-radius: 2px; }
+  .nm-line.gw i { background: #62e87a; box-shadow: 0 0 6px #62e87a; }
+  .nm-line.net i { background: #ffd23f; box-shadow: 0 0 6px #ffd23f; }
+  .nm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .nm-val { flex: none; min-width: 54px; text-align: right; font-weight: 700; font-size: 12px; }
+  .nm-val.bad { color: #ff7b7b; }
+  .nm-sub { flex: none; min-width: 52px; text-align: right; font-size: 10px; opacity: .85; }
   .nb-row { display: flex; align-items: center; gap: 7px; padding: 2px 6px; border-radius: 3px; cursor: default; line-height: 1.25; }
   .nb-row:hover { background: rgba(255,255,255,.18); }
   .nb-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #d3dbe6; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
@@ -366,6 +406,10 @@
   body.xp #donateForm { padding: 14px; }
   body.w8 #donateForm { padding: 12px; }
 
+  /* the orange line that shows where a dragged category will land */
+  #startmenu li.ins-before, #w8 li.mi.ins-before { box-shadow: inset 0 3px 0 #ff9900; }
+  #startmenu li.ins-after, #w8 li.mi.ins-after { box-shadow: inset 0 -3px 0 #ff9900; }
+
   /* right-click menu, themed */
   #ctx { position: fixed; z-index: 1000; min-width: 170px; padding: 4px; background: var(--panel); color: var(--text);
          border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); font-size: 13px; }
@@ -473,7 +517,11 @@
 <div id="w8" hidden>
   <div class="userbg" hidden></div>
   <div id="deskW8" class="desk"></div>
-  <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
+  <div class="rightcol">
+    <div class="calbox"><div class="cal-nav"><button type="button" class="cal-prev" title="Previous month">‹</button><span class="cal-title" title="Click to come back to this month"></span><button type="button" class="cal-next" title="Next month">›</button></div><div class="cal-grid"></div><div class="cal-hol"></div></div>
+    <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
+  </div>
+  <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div></div>
   <div class="winlayer" id="layerW8"></div>
   <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
   <div id="w8menu" hidden></div>
@@ -487,7 +535,11 @@
 <div id="xp" hidden>
   <div class="userbg" hidden></div>
   <div id="deskXp" class="desk"></div>
-  <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
+  <div class="rightcol">
+    <div class="calbox"><div class="cal-nav"><button type="button" class="cal-prev" title="Previous month">‹</button><span class="cal-title" title="Click to come back to this month"></span><button type="button" class="cal-next" title="Next month">›</button></div><div class="cal-grid"></div><div class="cal-hol"></div></div>
+    <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
+  </div>
+  <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div></div>
   <div class="winlayer" id="layerXp"></div>
   <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
   <div id="balloon" hidden><b>To begin, click here</b><br>Open the Start menu to find your tools.</div>
@@ -505,6 +557,7 @@
           <li id="xpEdit"><span id="xpEditChk" class="chk"></span>✏️ Edit mode</li>
           <li id="xpBg">🖼️ Change background…</li>
           <li id="xpBgReset">🔄 Reset background</li>
+          <li id="xpNet"><span id="xpNetChk" class="chk"></span>📶 Network monitor</li>
           <li class="xsep"></li>
           <li id="xpBackup">💾 Backup (ZIP)…</li>
           <li id="xpRestore">📥 Restore (ZIP)…</li>
@@ -529,7 +582,8 @@
 <script>
 const $ = s => document.querySelector(s);
 const UNCAT = 'Uncategorized';
-let shortcuts = [], categories = [], editingId = null, dragId = null;
+let shortcuts = [], categories = [], dividers = new Set(), editingId = null, dragId = null, dragCat = null;
+let calReady = false, calOffset = 0;                      // calOffset: months away from the current month (0 = this month)
 
 const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -591,10 +645,18 @@ const shortcutCtx = s => [
   null,
   { label: 'Delete', fn: () => del(s), danger: true },
 ];
-const catCtx = cat => [
-  { label: 'Rename…', fn: () => renameCat(cat) },
-  { label: 'Delete category', fn: () => delCat(cat), danger: true },
-];
+const catCtx = cat => {
+  const i = categories.indexOf(cat);
+  return [
+    { label: 'Rename…', fn: () => renameCat(cat) },
+    null,
+    ...(i > 0 ? [{ label: 'Move up', fn: () => moveCategoryBy(cat, -1) }] : []),
+    ...(i >= 0 && i < categories.length - 1 ? [{ label: 'Move down', fn: () => moveCategoryBy(cat, 1) }] : []),
+    { label: dividers.has(cat) ? 'Remove divider below' : 'Add divider below', fn: () => toggleDivider(cat) },
+    null,
+    { label: 'Delete category', fn: () => delCat(cat), danger: true },
+  ];
+};
 
 const ctxMenu = document.createElement('div');
 ctxMenu.id = 'ctx'; ctxMenu.hidden = true;
@@ -673,6 +735,7 @@ const deskCtx = () => [
   { label: 'New category…', fn: addCat },
   { label: 'New note…', fn: () => { const i = deskBox().parentElement.querySelector('.nb-new'); i.hidden = false; i.focus(); } },
   { label: (document.body.classList.contains('editing') ? '✓ ' : '') + 'Edit mode', fn: toggleEdit },
+  { label: (netOn ? '✓ ' : '') + 'Network monitor', fn: toggleNet },
   null,
   { label: `Switch to ${otherTheme()[1]} theme`, fn: () => setTheme(otherTheme()[0]) },
 ];
@@ -720,7 +783,8 @@ function render() {
 }
 
 async function load() {
-  [shortcuts, categories] = await Promise.all([api('GET', '/api/shortcuts'), api('GET', '/api/categories')]);
+  const [s, c, m] = await Promise.all([api('GET', '/api/shortcuts'), api('GET', '/api/categories'), api('GET', '/api/menu')]);
+  shortcuts = s; categories = c; dividers = new Set(m.dividers || []);
   render();
 }
 
@@ -840,6 +904,56 @@ async function moveTo(id, cat) {
     await load();
     toast(`Moved “${s.name}” to ${cat || UNCAT}`);
   } catch (e) { toast(e.message, true); }
+}
+
+// ---- put the categories in the order you like, and draw divider lines between groups
+async function saveOrder(order) {
+  try { await api('PUT', '/api/category-order', { order }); await load(); } catch (e) { toast(e.message, true); }
+}
+function moveCategory(name, target, after) {             // put `name` just before / after `target`
+  const order = categories.filter(c => c !== name), i = order.indexOf(target);
+  if (i < 0) return;
+  order.splice(after ? i + 1 : i, 0, name);
+  if (order.join('\0') !== categories.join('\0')) saveOrder(order);
+}
+function moveCategoryBy(name, delta) {                   // the right-click "Move up / Move down"
+  const i = categories.indexOf(name), j = i + delta;
+  if (i < 0 || j < 0 || j >= categories.length) return;
+  const order = [...categories];
+  [order[i], order[j]] = [order[j], order[i]];
+  saveOrder(order);
+}
+async function toggleDivider(cat) {
+  const set = new Set(dividers);
+  set.has(cat) ? set.delete(cat) : set.add(cat);
+  try { await api('PUT', '/api/menu', { dividers: [...set] }); await load(); } catch (e) { toast(e.message, true); }
+}
+function categoryDrag(li, cat) {                         // drag a category row up or down; an orange line shows where it will land
+  li.draggable = true;
+  const clearLine = () => li.classList.remove('ins-before', 'ins-after');
+  li.addEventListener('dragstart', e => {
+    if (e.target !== li) return;                         // shortcuts inside its submenu have their own drag
+    dragCat = cat; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', cat);
+  });
+  li.addEventListener('dragend', e => {
+    if (e.target !== li) return;
+    dragCat = null;
+    document.querySelectorAll('.ins-before, .ins-after').forEach(x => x.classList.remove('ins-before', 'ins-after'));
+  });
+  li.addEventListener('dragover', e => {
+    if (!dragCat || dragCat === cat) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    const r = li.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
+    li.classList.toggle('ins-after', after); li.classList.toggle('ins-before', !after);
+  });
+  li.addEventListener('dragleave', e => { if (!li.contains(e.relatedTarget)) clearLine(); });
+  li.addEventListener('drop', e => {
+    if (!dragCat || dragCat === cat) return;
+    e.preventDefault(); e.stopPropagation();
+    const from = dragCat, after = li.classList.contains('ins-after');
+    dragCat = null; clearLine();
+    moveCategory(from, cat, after);
+  });
 }
 
 // drag a shortcut row onto a category row (Windows 98 / XP menus)
@@ -1152,6 +1266,7 @@ function xpCategory(cat, list) {
   li.append(fi, nm, t, arr, fly);
   if (cat !== UNCAT) li._ctx = catCtx(cat);
   dropTarget(li, cat === UNCAT ? '' : cat);
+  if (cat !== UNCAT) categoryDrag(li, cat);
   li.onmouseenter = () => openFly(li);
   li.onmouseleave = scheduleClose;
   li.onclick = e => { if (!e.target.closest('.flyout')) xp.open === li ? closeFly() : openFly(li); };
@@ -1184,6 +1299,7 @@ function renderXp() {
     list.sort(byName);
     const li = xpCategory(cat, list);
     ul.append(li);
+    if (cat !== UNCAT && dividers.has(cat)) { const sep = document.createElement('li'); sep.className = 'xsep'; ul.append(sep); }
   }
   if (!shortcuts.length && !categories.length) {
     const e = document.createElement('li'); e.className = 'xempty'; e.textContent = 'Nothing here yet — use “Add shortcut…”'; ul.append(e);
@@ -1207,6 +1323,7 @@ $('#xpOff').onclick = () => { closeStart(); powerOff(); };
 $('#xpCoffee').onclick = () => { closeStart(); showDonate(); };
 $('#xpBg').onclick = () => { closeStart(); chooseBackground(); };
 $('#xpBgReset').onclick = () => { closeStart(); resetBackground(); };
+$('#xpNet').onclick = toggleNet;
 $('#xpBackup').onclick = () => { closeStart(); backupDownload(); };
 $('#xpRestore').onclick = () => { closeStart(); restoreFromZip(); };
 $('#xpReset').onclick = () => { closeStart(); factoryReset(); };
@@ -1302,6 +1419,7 @@ function categoryItem(cat, list) {
     tools: toolsOf(btn('✎', 'Rename', () => renameCat(cat)), btn('✕', 'Delete category', () => delCat(cat), 'del')),
   }));
   dropTarget(li, cat);
+  categoryDrag(li, cat);
   return li;
 }
 
@@ -1350,9 +1468,12 @@ function renderW8() {
   const loose = [];
   for (const s of shortcuts) (groups.has(s.category) ? groups.get(s.category) : loose).push(s);
   const programs = document.createElement('ul');
-  groups.forEach((list, cat) => programs.append(categoryItem(cat, list)));
+  groups.forEach((list, cat) => {
+    programs.append(categoryItem(cat, list));
+    if (dividers.has(cat)) programs.append(sepItem());
+  });
   if (loose.length) {
-    if (groups.size) programs.append(sepItem());
+    if (groups.size && !(programs.lastElementChild && programs.lastElementChild.classList.contains('sep'))) programs.append(sepItem());
     loose.sort(byName).forEach(s => programs.append(shortcutItem(s)));
   }
   if (!programs.children.length) programs.append(mi('(Empty)', { disabled: true }));
@@ -1372,6 +1493,7 @@ function renderW8() {
     mi('Theme', { icon: '🎨', sub: themes }),
     mi('Change background…', { icon: '🖼️', onClick: chooseBackground }),
     mi('Reset background', { icon: '🔄', onClick: resetBackground }),
+    mi((netOn ? '✓ ' : '') + 'Network monitor', { icon: '📶', onClick: toggleNet, keep: true }),
     sepItem(),
     mi('Backup (download ZIP)…', { icon: '💾', onClick: backupDownload }),
     mi('Restore from ZIP…', { icon: '📥', onClick: restoreFromZip }),
@@ -1423,8 +1545,189 @@ function tickDeskClock() {
     c.querySelector('.dc-ap').textContent = ampm;
     c.querySelector('.dc-date').textContent = date;
   });
+  const dayKey = d.toDateString();                       // a new day starts: move the calendar's circle to the new date
+  if (dayKey !== tickDeskClock.day) { tickDeskClock.day = dayKey; if (calReady) renderCalendar(); }
 }
 tickDeskClock(); setInterval(tickDeskClock, 1000);
+
+/* ---------------- month calendar with US federal holidays ----------------
+   The holidays follow fixed rules ("4th Thursday of November"), so they are worked out right here:
+   no internet, no account, nothing leaves the PC. */
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function usHolidays(year) {
+  // day-of-month of the n-th weekday (0 = Sunday ... 6 = Saturday) of a month; n = -1 means the last one
+  const nth = (m, wd, n) => {
+    if (n > 0) return 1 + ((wd - new Date(year, m, 1).getDay() + 7) % 7) + (n - 1) * 7;
+    const last = new Date(year, m + 1, 0);
+    return last.getDate() - ((last.getDay() - wd + 7) % 7);
+  };
+  const rules = [
+    [0, 1, "New Year's Day"],
+    year >= 1986 && [0, nth(0, 1, 3), 'Martin Luther King Jr. Day'],
+    [1, nth(1, 1, 3), "Washington's Birthday (Presidents' Day)"],
+    [4, nth(4, 1, -1), 'Memorial Day'],
+    year >= 2021 && [5, 19, 'Juneteenth'],
+    [6, 4, 'Independence Day'],
+    [8, nth(8, 1, 1), 'Labor Day'],
+    [9, nth(9, 1, 2), 'Columbus Day'],
+    [10, 11, 'Veterans Day'],
+    [10, nth(10, 4, 4), 'Thanksgiving Day'],
+    [11, 25, 'Christmas Day'],
+  ].filter(Boolean);
+  const out = [];
+  for (const [m, d, name] of rules) {
+    out.push({ y: year, m, d, name, observed: false });
+    const wd = new Date(year, m, d).getDay();            // on a weekend the day off is the Friday before / Monday after
+    if (wd === 6 || wd === 0) {
+      const o = new Date(year, m, d + (wd === 6 ? -1 : 1));
+      out.push({ y: o.getFullYear(), m: o.getMonth(), d: o.getDate(), name, observed: true });
+    }
+  }
+  return out;
+}
+
+function renderCalendar() {
+  const now = new Date();
+  const shown = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
+  const Y = shown.getFullYear(), M = shown.getMonth();
+  const holidays = new Map();                             // look at the years around, so a day off in late December / early January is found
+  for (const yr of [Y - 1, Y, Y + 1]) for (const h of usHolidays(yr)) if (!holidays.has(`${h.y}-${h.m}-${h.d}`)) holidays.set(`${h.y}-${h.m}-${h.d}`, h);
+  const start = new Date(Y, M, 1 - shown.getDay());       // the Sunday on or before the 1st; always 6 rows so the box never jumps in height
+  const thisMonth = [...holidays.values()].filter(h => h.y === Y && h.m === M).sort((a, b) => a.d - b.d);
+  const caption = thisMonth.map(h => `${h.d} ${h.name}${h.observed ? ' (observed)' : ''}`).join(' · ');
+
+  document.querySelectorAll('.calbox').forEach(box => {
+    box.querySelector('.cal-title').textContent = `${MONTH_NAMES[M]} ${Y}`;
+    const grid = box.querySelector('.cal-grid');
+    grid.textContent = '';
+    for (const w of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) grid.append(el('div', 'cal-wd', w));
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const cell = el('div', 'cal-d');
+      cell.append(el('span', '', d.getDate()));
+      if (d.getMonth() !== M) cell.classList.add('out');
+      if (d.getDay() === 0 || d.getDay() === 6) cell.classList.add('we');
+      if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) cell.classList.add('today');
+      const h = holidays.get(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+      if (h && d.getMonth() === M) { cell.classList.add('hol'); cell.title = h.observed ? `${h.name} (observed)` : h.name; }
+      grid.append(cell);
+    }
+    box.querySelector('.cal-hol').textContent = caption;
+  });
+}
+
+function wireCalendar() {
+  document.querySelectorAll('.calbox').forEach(box => {
+    box.querySelector('.cal-prev').onclick = () => { calOffset--; renderCalendar(); };
+    box.querySelector('.cal-next').onclick = () => { calOffset++; renderCalendar(); };
+    box.querySelector('.cal-title').onclick = () => { calOffset = 0; renderCalendar(); };
+  });
+}
+
+/* ---------------- network monitor: latency to the gateway and to Google DNS, drawn like an ECG ---------------- */
+let netOn = store.get('netmon', true), netTimer = null;
+const NET_GW = '#62e87a', NET_IN = '#ffd23f';
+const fmtMs = v => v == null ? '–' : v < 10 ? v.toFixed(1) : String(Math.round(v));
+
+function netStats(pts, now, span = 60) {                 // numbers for the last minute
+  const win = pts.filter(p => now - p[0] <= span), ok = win.filter(p => p[1] != null).map(p => p[1]);
+  let jitter = null;
+  if (ok.length > 1) { let s = 0; for (let i = 1; i < ok.length; i++) s += Math.abs(ok[i] - ok[i - 1]); jitter = s / (ok.length - 1); }
+  return { n: win.length, last: win.length ? win[win.length - 1][1] : null,
+           avg: ok.length ? ok.reduce((a, b) => a + b, 0) / ok.length : null,
+           min: ok.length ? Math.min(...ok) : null, max: ok.length ? Math.max(...ok) : null,
+           loss: win.length ? (win.length - ok.length) / win.length * 100 : 0, jitter };
+}
+
+function drawNet(canvas, d) {
+  const W = 272, H = 78, dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== Math.round(W * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+  const c = canvas.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  const win = d.window || 120, now = d.now;
+  const g = d.gw.filter(p => now - p[0] <= win), n = d.inet.filter(p => now - p[0] <= win);
+  const peak = Math.max(0, ...[...g, ...n].map(p => p[1] == null ? 0 : p[1]));
+  const maxMs = [30, 100, 300, 1000, 3000].find(m => m >= peak * 1.1) || 3000;     // the scale grows when latency spikes
+  const top = 6, bot = 9, left = 26;
+  const Y = ms => H - bot - Math.log10(1 + Math.max(0, ms)) / Math.log10(1 + maxMs) * (H - top - bot);   // log scale: 1 ms and 100 ms both readable
+  const X = t => left + (1 - (now - t) / win) * (W - left - 5);
+
+  c.font = '9px "Segoe UI", Tahoma, sans-serif'; c.lineWidth = 1;
+  for (const ms of [1, 10, 100, 1000]) {                                          // faint guide lines
+    if (ms > maxMs) break;
+    const y = Math.round(Y(ms)) + .5;
+    c.strokeStyle = 'rgba(255,255,255,.17)'; c.setLineDash([2, 3]); c.beginPath(); c.moveTo(left, y); c.lineTo(W - 4, y); c.stroke(); c.setLineDash([]);
+    c.fillStyle = 'rgba(255,255,255,.65)'; c.fillText(String(ms), 3, y + 3);
+  }
+  for (let s = 30; s < win; s += 30) {                                            // a vertical line every 30 seconds
+    const x = Math.round(X(now - s)) + .5;
+    c.strokeStyle = 'rgba(255,255,255,.08)'; c.beginPath(); c.moveTo(x, top); c.lineTo(x, H - bot); c.stroke();
+  }
+  if (!g.length && !n.length) { c.fillStyle = 'rgba(255,255,255,.75)'; c.fillText('Measuring…', left + 6, H / 2); return; }
+
+  const trace = (pts, color) => {
+    const grad = c.createLinearGradient(left, 0, W - 4, 0);                       // old data fades out on the left, like a heart monitor
+    grad.addColorStop(0, color + '22'); grad.addColorStop(.6, color + 'aa'); grad.addColorStop(1, color);
+    c.lineWidth = 1.6; c.lineJoin = 'round'; c.strokeStyle = grad; c.shadowColor = color; c.shadowBlur = 5;
+    let pen = false;
+    c.beginPath();
+    for (const [t, ms] of pts) {
+      if (ms == null) { pen = false; continue; }                                  // a lost reply breaks the line
+      pen ? c.lineTo(X(t), Y(ms)) : c.moveTo(X(t), Y(ms));
+      pen = true;
+    }
+    c.stroke(); c.shadowBlur = 0;
+    const last = [...pts].reverse().find(p => p[1] != null);                      // bright dot on the newest reading
+    if (last && now - last[0] < 6) { c.fillStyle = color; c.shadowColor = color; c.shadowBlur = 9; c.beginPath(); c.arc(X(last[0]), Y(last[1]), 2.6, 0, 7); c.fill(); c.shadowBlur = 0; }
+    c.strokeStyle = '#ff4d4d'; c.lineWidth = 1.5;                                 // red tick at the bottom for every lost reply
+    for (const [t, ms] of pts) if (ms == null) { const x = Math.round(X(t)) + .5; c.beginPath(); c.moveTo(x, H - bot - 1); c.lineTo(x, H - 1); c.stroke(); }
+  };
+  trace(g, NET_GW); trace(n, NET_IN);
+}
+
+function renderNet(d) {
+  const gw = netStats(d.gw, d.now), nt = netStats(d.inet, d.now);
+  let level = 'ok', text = 'Network good';
+  if (!gw.n && !nt.n) { level = ''; text = 'Measuring…'; }
+  else if (!d.gateway) { level = 'bad'; text = 'No gateway found'; }
+  else if (gw.n >= 4 && gw.loss >= 50) { level = 'bad'; text = 'Local network down'; }
+  else if (nt.n >= 4 && nt.loss >= 50) { level = 'bad'; text = 'Internet unreachable'; }
+  else if (gw.loss > 3) { level = 'warn'; text = 'Local network losing packets'; }
+  else if (gw.avg != null && gw.avg > 20) { level = 'warn'; text = 'Local network slow'; }
+  else if (nt.loss > 3) { level = 'warn'; text = 'Internet losing packets'; }
+  else if (nt.avg != null && nt.avg > 150) { level = 'warn'; text = 'Internet slow'; }
+  else if (nt.jitter != null && nt.jitter > 40) { level = 'warn'; text = 'Internet unstable'; }
+
+  const fill = (line, name, ip, st) => {
+    line.querySelector('.nm-name').textContent = `${name} ${ip}`;
+    const val = line.querySelector('.nm-val');
+    val.textContent = st.last != null ? `${fmtMs(st.last)} ms` : st.n ? 'timeout' : '…';
+    val.classList.toggle('bad', st.last == null && st.n > 0);
+    line.querySelector('.nm-sub').textContent = `${Math.round(st.loss)}% loss`;
+    line.title = st.n ? `Last minute: average ${fmtMs(st.avg)} ms, best ${fmtMs(st.min)}, worst ${fmtMs(st.max)}, jitter ${fmtMs(st.jitter)} ms, ${Math.round(st.loss)}% lost` : '';
+  };
+  document.querySelectorAll('.netbox').forEach(box => {
+    box.querySelector('.nm-dot').className = 'nm-dot ' + level;
+    box.querySelector('.nm-verdict').textContent = text;
+    fill(box.querySelector('.nm-line.gw'), 'Gateway', d.gateway || '(not found)', gw);
+    fill(box.querySelector('.nm-line.net'), 'Google DNS', d.internet + (d.via === 'tcp' ? ' (TCP)' : ''), nt);
+    drawNet(box.querySelector('.nm-chart'), d);
+  });
+}
+
+async function pollNet() { try { renderNet(await api('GET', '/api/net')); } catch {} }
+function startNet() {
+  document.querySelectorAll('.netbox').forEach(b => { b.hidden = !netOn; });
+  if (netOn && !netTimer) { pollNet(); netTimer = setInterval(pollNet, 1000); }
+}
+function stopNet() { clearInterval(netTimer); netTimer = null; document.querySelectorAll('.netbox').forEach(b => { b.hidden = true; }); }
+function paintNetCheck() { $('#xpNetChk').textContent = netOn ? '✓' : ''; }
+function toggleNet() {                                   // off = no pings at all: the server only pings while somebody is looking
+  netOn = !netOn; store.set('netmon', netOn);
+  netOn ? startNet() : stopNet();
+  paintNetCheck(); renderW8();
+}
 
 /* ---------------- pop-up forms act like windows: drag by the title bar, close with the ✕ ---------------- */
 document.querySelectorAll('dialog').forEach(dlg => {
@@ -1620,6 +1923,11 @@ function paintNoteWin(w, n) {
 }
 
 wireNotesBoxes();
+wireCalendar();
+renderCalendar();
+calReady = true;
+paintNetCheck();
+startNet();
 loadNotes();
 loadBackground();
 setTheme(store.get('theme', 'w8'));
