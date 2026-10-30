@@ -53,13 +53,25 @@ Click **Start**, then **Shut Down**. Or just close the window.
 - **Desktop icons**: right-click a shortcut, choose *Add to desktop*, then drag it wherever you like.
 - **Drag and drop** a shortcut onto another category, or right-click and choose *Move to category...*.
 - **Two themes**: Windows XP (Luna) and Windows 98 menu on a Windows 8 desktop. Switch any time.
-- **Notes**: a compact to-do list on the right of the desktop. Each note has a status (To do, In progress, Waiting, Done)
+- **Drag to reorder categories** (or right-click > *Move up / Move down*) and add **divider lines** between groups.
+- **Commands**: a click-to-copy list of CLI commands, in groups you control. *Load starter Cisco commands* adds about 170
+  `show` commands for IOS/IOS-XE, NX-OS, CUCM, ISE and FTD. Check the syntax for your software version before relying on it.
+- **Notes**: a compact to-do list on the right of the desktop. Each note has a status shown as a small animation
+  (To do, In progress, Waiting, Done), an optional **due date** you pick from a calendar, a link to one of your tools,
   and opens in its own small window with a log, so you can keep track of what you did and when.
+- **Calendar**: a month view with **US federal holidays** (worked out on your PC, no internet), today circled, arrows to
+  change month, your own **events**, note due dates as dots, a "Next: ... in 2 h" countdown, and **reminders**
+  (while the app is open).
+- **Network monitor** (bottom right): a live latency chart to your default gateway and to Google DNS, with packet loss,
+  DNS lookup time, Wi-Fi signal, PC load and a VPN badge. The **Details** window shows 5 min to 1 hour of history, up to
+  4 extra hosts you choose, and an outage log.
+- **Audio alerts**: sounds when the network goes down, needs attention or comes back, and for reminders. In
+  *Settings > Alert sounds...* you can upload your own WAV, MP3, OGG, M4A or FLAC file for each one.
 - **Desktop clock**: time with AM/PM, the day, and the date (like `Thursday, 29-Oct-2026`), from your PC's own clock.
 - **Your own background**: pick a picture in *Settings > Change background...* (PNG, JPG, GIF or WEBP, up to 15 MB).
 - **Windows-style pop-up forms**: drag them by the title bar, close them with the red or grey close button.
-- **Backup / Restore / Factory reset**: export everything (shortcuts, categories, icons, background and notes) to a ZIP,
-  restore it later, or wipe it all.
+- **Backup / Restore / Factory reset**: export everything (shortcuts, categories, icons, commands, notes, events,
+  background and your alert sounds) to a ZIP, restore it later, or wipe it all.
 - **Shut Down** from the menu, or just close the window: the server stops itself.
 
 ## Requirements
@@ -82,7 +94,8 @@ kept, because the starter pack does not contain any.
 
 ## Your data
 Everything you create is stored in the `data` folder next to the program (`shortcuts.json`, `categories.json`,
-`notes.json`, `background.*` and `icons/`). It never leaves your PC. Back it up from the menu, or copy the folder.
+`commands.json`, `notes.json`, `events.json`, `menu.json`, `outages.json`, `net-targets.json`, `background.*`,
+`sounds/` and `icons/`). It stays on your PC. Back it up from the menu, or copy the folder.
 
 ## Settings (environment variables, all optional)
 | Variable | Meaning |
@@ -95,6 +108,10 @@ Everything you create is stored in the `data` folder next to the program (`short
 - The server listens on `127.0.0.1` only and rejects requests from other websites.
 - Shortcuts are launched by their stored id, and only `.bat` / `.cmd` files can be run.
 - Only restore backups you trust: a backup can contain shortcuts that run `.bat` files on your PC.
+- The network monitor sends small ping and DNS test packets to your gateway, your DNS server and Google DNS
+  (`8.8.8.8` / `8.8.4.4`), plus any hosts you add. It does this only while the app is open and the monitor is on, and you can
+  switch it off in *Settings*. Nothing else is sent anywhere.
+- Do not save passwords or keys in Commands or Notes.
 
 ## Project layout
 | Path | What it is |
@@ -102,6 +119,7 @@ Everything you create is stored in the `data` folder next to the program (`short
 | `server.py` | The whole backend (standard library only) |
 | `static/index.html` | The whole front end (one file, no build step) |
 | `static/favicon.svg`, `favicon.ico` | App icon |
+| `starter_commands.py` | The starter Cisco commands you can load into the Commands list |
 | `donate.py` | Support links and QR code, compiled into the program |
 | `install.bat` | One-click setup: makes the `.venv`, adds the Desktop icon, starts the app |
 | `run.bat` | Starts the app |
