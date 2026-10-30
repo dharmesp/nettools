@@ -85,7 +85,7 @@
                     border-top: 10px solid #000; }
   @keyframes balloonin { from { opacity: 0; transform: translateY(8px); } }
 
-  #startmenu { position: absolute; left: 0; bottom: 30px; width: 430px; z-index: 40; background: #fff;
+  #startmenu { position: absolute; left: 0; bottom: 30px; width: 500px; z-index: 40; background: #fff;
                border: 1px solid #0831d9; border-bottom: 0; border-radius: 8px 8px 0 0;
                box-shadow: 3px -2px 8px rgba(0,0,0,.45); animation: smopen .22s ease-out; }
   @keyframes smopen { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0); } }
@@ -102,7 +102,8 @@
   .sm-search input:focus { outline: 1px solid #316ac5; }
   .sm-right { flex: 1; background: #d3e5fa; padding: 6px 0; color: #00136b; }
   #startmenu ul { list-style: none; margin: 0; padding: 0; }
-  #xpMain { overflow-y: auto; min-height: 250px; max-height: min(52vh, 430px); padding: 3px 2px; scrollbar-width: thin; }
+  #xpMain { overflow-y: auto; overflow-x: hidden; min-height: 250px; max-height: min(52vh, 430px); padding: 3px 2px; scrollbar-width: thin; }
+  #startmenu .xc > .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   #startmenu li { display: flex; align-items: center; gap: 8px; padding: 5px 8px; font-size: 12px; cursor: default;
                   white-space: nowrap; position: relative; }
   .sm-right li { font-weight: 700; }
@@ -193,7 +194,7 @@
   body.w8 dialog::backdrop { background: rgba(0,0,0,.35); }
   body.w8 dialog h2 { margin: -12px -12px 10px; padding: 3px 6px; color: #fff; font: 700 12px Tahoma, Arial, sans-serif;
                       background: linear-gradient(90deg, #000080, #1084d0); }
-  body.w8 #form, body.w8 #askForm { padding: 12px; }
+  body.w8 #form, body.w8 #askForm, body.w8 #cmdForm, body.w8 #evForm, body.w8 #remForm { padding: 12px; }
   body.w8 label { color: #000; font-size: 11px; }
   body.w8 dialog input, body.w8 dialog select { background: #fff; color: #000; border: 0; border-radius: 0; box-shadow: var(--sunken);
                                                 padding: 3px 4px; font: 11px Tahoma, Arial, sans-serif; }
@@ -263,12 +264,31 @@
   .nb-add:hover, .nb-more:hover { background: rgba(255,255,255,.2); }
   .nb-new { display: block; width: 100%; margin: 2px 0 3px; padding: 3px 6px; font: 12px "Segoe UI", Tahoma, sans-serif;
             color: #000; background: rgba(255,255,255,.93); border: 1px solid rgba(255,255,255,.7); border-radius: 3px; text-shadow: none; }
-  .nb-list { max-height: max(90px, calc(100vh - 640px)); overflow-y: auto; scrollbar-width: thin; }
+  .nb-list { max-height: max(90px, calc(100vh - 700px)); overflow-y: auto; scrollbar-width: thin; }
 
   /* network monitor: bottom right, just above the taskbar */
   .netbox { position: absolute; right: 20px; bottom: 40px; width: 272px; z-index: 5; pointer-events: none; color: #fff;
             font: 11px "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
   .nm-head { display: flex; align-items: center; gap: 7px; padding: 0 2px 4px; font: 600 12px "Segoe UI", Tahoma, sans-serif; }
+  .nm-verdict { flex: 1; min-width: 0; }
+  .nm-vpn { flex: none; padding: 0 5px; border-radius: 3px; font: 700 9px "Segoe UI", Tahoma, sans-serif; letter-spacing: .06em;
+            background: #4fc3f7; color: #04283a; text-shadow: none; }
+  .nm-det { flex: none; margin: 0; padding: 0 5px; background: none; border: 1px solid rgba(255,255,255,.45); border-radius: 3px; color: #fff;
+            font-size: 10px; line-height: 1.5; cursor: pointer; pointer-events: auto; text-shadow: none; }
+  .nm-det:hover { background: rgba(255,255,255,.25); }
+  .nm-chart { cursor: pointer; pointer-events: auto; }
+  .nm-line.dns i { background: #7fd8ff; box-shadow: 0 0 6px #7fd8ff; }
+  .nm-line.wifi i { background: #d9a6ff; box-shadow: 0 0 6px #d9a6ff; }
+  .nm-line.pc i { background: #ffffff; opacity: .7; }
+  .nm-line.pc .nm-name { flex: none; }
+  .nm-line.pc .nm-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .nm-line[hidden] { display: none !important; }
+  .nm-val.warn { color: #ffcf6b; }
+  .nm-snd { flex: none; margin: 0; padding: 0 4px; background: none; border: 0; border-radius: 3px; color: #fff; font-size: 13px; line-height: 1.3;
+            cursor: pointer; pointer-events: auto; text-shadow: none; opacity: .85; }
+  .nm-snd:hover { background: rgba(255,255,255,.25); opacity: 1; }
+  .netbox.alarm .nm-head { animation: nmpulse 1s ease-in-out infinite; }               /* also flashes, in case the sound is off or blocked */
+  @keyframes nmpulse { 50% { opacity: .35; } }
   .nm-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #9aa5b1; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
   .nm-dot.ok { background: #4be06a; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 9px #4be06a; }
   .nm-dot.warn { background: #ffb02e; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 0 9px #ffb02e; }
@@ -332,6 +352,57 @@
   body.w8 .nwin .nw-x { width: 18px; height: 16px; background: #c0c0c0; color: #000; border: 0; box-shadow: var(--raised); font-size: 10px; }
   body.w8 .nwin input, body.w8 .nw-logs { border: 0; box-shadow: var(--sunken); }
   body.w8 .nwin input:focus { outline: 1px dotted #000; }
+
+  /* network details window */
+  .netwin { width: 700px; max-width: calc(100vw - 20px); }
+  .nd-chart { display: block; width: 100%; height: 230px; background: #0b1a2e; border: 1px solid #7f9db9; cursor: crosshair; }
+  .nd-hover { min-height: 15px; font: 11px Consolas, "Cascadia Mono", monospace; color: #222; }
+  .nd-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+  .nd-table th, .nd-table td { padding: 2px 5px; text-align: left; white-space: nowrap; }
+  .nd-table th { background: rgba(0,0,0,.08); font-weight: 700; }
+  .nd-table td.num, .nd-table th:not(:first-child) { text-align: right; }
+  .nd-table tbody tr:nth-child(even) { background: rgba(0,0,0,.04); }
+  .nd-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .nd-host-txt { color: #666; font-size: 10px; }
+  .nd-rm { padding: 0 5px !important; line-height: 1.3; }
+  .nd-info { font-size: 11px; line-height: 1.55; }
+  .nd-add .nd-name { flex: 0 0 150px; }
+  .nd-out-head { display: flex; align-items: center; gap: 8px; }
+  .nd-out-head .nd-out-sub { flex: 1; color: #666; font-size: 10px; }
+  .nd-out { height: 92px; }
+  body.w8 .nd-hover, body.w8 .nd-host-txt, body.w8 .nd-out-sub { color: #333; }
+  body.w8 .nd-chart { border: 0; box-shadow: var(--sunken); }
+
+  /* calendar: events, due dates, the day panel, the "Next:" line */
+  .cal-d { position: relative; pointer-events: auto; cursor: pointer; }
+  .cal-d:hover > span { background: rgba(255,255,255,.2); }
+  .cal-d.hol:hover > span { background: rgba(255, 82, 82, .8); }
+  .cal-d.has-ev::after, .cal-d.has-due::after { content: ""; position: absolute; bottom: 0; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #7fe3ff; }
+  .cal-d.has-due::after { background: #ffb347; }
+  .cal-d.has-ev.has-due::after { margin-left: -5px; box-shadow: 6px 0 0 #ffb347; }
+  .cal-d.sel > span { box-shadow: inset 0 0 0 1px rgba(255,255,255,.95); }
+  .cal-upnext { padding: 3px 2px 0; font-size: 11px; font-weight: 600; line-height: 1.35; pointer-events: none; }
+  .cal-upnext:empty { display: none; }
+  .cal-upnext .over { color: #ffb4b4; }
+  .cal-day { margin-top: 4px; padding: 4px 6px 5px; border-radius: 4px; background: rgba(0, 12, 34, .4); border: 1px solid rgba(255,255,255,.22); pointer-events: auto; }
+  .cal-day[hidden] { display: none; }
+  .cal-day-h { font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+  .cal-item { display: flex; gap: 7px; padding: 1px 3px; margin: 0 -3px; border-radius: 3px; cursor: pointer; font-size: 11px; line-height: 1.35; }
+  .cal-item:hover, .cal-add:hover { background: rgba(255,255,255,.18); }
+  .cal-item .ci-t { flex: none; min-width: 58px; opacity: .85; }
+  .cal-item .ci-x { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal-add { padding: 1px 3px; margin: 1px -3px 0; border-radius: 3px; cursor: pointer; font-size: 11px; opacity: .9; }
+  .nb-due { flex: none; font-size: 10px; opacity: .9; }
+  .nb-due.over { color: #ffb4b4; font-weight: 700; opacity: 1; }
+  .rem-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px dotted rgba(128,128,128,.6); }
+  .rem-text { flex: 1; font-size: 13px; }
+  body.xp .rem-text, body.w8 .rem-text { font-size: 12px; }
+  .nwin .combo { flex: 1; min-width: 0; margin-top: 0; }
+  .nwin .combo input { width: 100%; padding-right: 26px; }
+  .nwin .combo-list { color: #000; background: #fff; border: 1px solid #7f9db9; }
+  .nwin .combo-item { padding: 2px 6px; }
+  .nwin .combo-btn { background: linear-gradient(#dfe9fb, #a9c2ee); color: #000; border: 1px solid #7f9db9 !important; }
+  body.w8 .nwin .combo-btn { background: #c0c0c0; border: 0 !important; box-shadow: var(--raised); }
 
   /* your own background picture, drawn under the icons and the clock */
   .userbg { position: absolute; inset: 0; background: center / cover no-repeat; }
@@ -406,6 +477,84 @@
   body.xp #donateForm { padding: 14px; }
   body.w8 #donateForm { padding: 12px; }
 
+  /* commands: the add/edit form */
+  textarea { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; width: 100%;
+             margin-top: 4px; resize: vertical; font: 12px Consolas, "Cascadia Mono", monospace; -webkit-user-select: text; user-select: text; }
+  textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .cmd-note { margin: -4px 0 0; color: var(--muted); font-size: 11px; }
+  body.xp dialog textarea { background: #fff; color: #000; border: 1px solid #7f9db9; border-radius: 0; padding: 3px 5px; }
+  body.xp dialog textarea:focus { outline: 1px solid #316ac5; }
+  body.xp .cmd-note { color: #444; }
+  body.w8 dialog textarea { background: #fff; color: #000; border: 0; border-radius: 0; padding: 3px 4px; box-shadow: var(--sunken); }
+  body.w8 dialog textarea:focus { outline: 1px dotted #000; }
+  body.w8 .cmd-note { color: #333; }
+  #startmenu li.xcmd .nm { font-size: 12px; }
+
+  /* status icons: a small animation per status instead of text */
+  .nb-ic { flex: none; position: relative; width: 16px; height: 16px; display: inline-block; }
+  .nb-ic::before, .nb-ic::after { content: ""; position: absolute; box-sizing: border-box; }
+  .nb-ic.todo::before { inset: 2px; border: 2px solid #dfe8f5; border-radius: 50%; animation: ic-pulse 2.2s ease-in-out infinite; }
+  .nb-ic.doing::before { inset: 1px; border: 2.5px solid rgba(255, 210, 63, .3); border-top-color: #ffd23f; border-radius: 50%; animation: ic-spin .85s linear infinite; }
+  .nb-ic.waiting::before { inset: 1px; border: 2px solid #ffa94d; border-radius: 50%; }
+  .nb-ic.waiting::after { left: 7px; top: 3px; width: 2px; height: 5px; background: #ffa94d; border-radius: 1px; transform-origin: 1px 5px; animation: ic-spin 2.4s linear infinite; }
+  .nb-ic.done::before { inset: 1px; border-radius: 50%; background: #3ecf5d; box-shadow: 0 0 0 0 rgba(62, 207, 93, .7); animation: ic-pop .5s ease-out, ic-glow 2.6s ease-out .5s infinite; }
+  .nb-ic.done::after { left: 5.3px; top: 3.2px; width: 4px; height: 7.5px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); animation: ic-pop .5s ease-out; }
+  @keyframes ic-spin { to { transform: rotate(360deg); } }
+  @keyframes ic-pulse { 0%, 100% { transform: scale(.78); opacity: .55; } 50% { transform: scale(1); opacity: 1; } }
+  @keyframes ic-pop { 0% { transform: scale(0) rotate(0deg); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .nb-ic.done::after { animation-name: ic-pop-check; }
+  @keyframes ic-pop-check { 0% { transform: scale(0) rotate(45deg); } 70% { transform: scale(1.25) rotate(45deg); } 100% { transform: scale(1) rotate(45deg); } }
+  @keyframes ic-glow { 0% { box-shadow: 0 0 0 0 rgba(62, 207, 93, .65); } 70%, 100% { box-shadow: 0 0 0 6px rgba(62, 207, 93, 0); } }
+  @media (prefers-reduced-motion: reduce) { .nb-ic::before, .nb-ic::after { animation: none !important; } }
+  .nw-status .nb-ic { margin-right: 5px; vertical-align: -3px; }
+  .nw-status .nb-ic.todo::before { border-color: #666; }
+  .nwin .nw-status button { white-space: nowrap; }
+
+  /* the date picker */
+  #sndDlg { width: 470px; }
+  .snd-note { margin: 0 0 8px; font-size: 12px; line-height: 1.4; }
+  .snd-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 6px 0; border-top: 1px dotted rgba(128,128,128,.55); }
+  .snd-row b { font-size: 12px; }
+  .snd-desc { font-size: 11px; opacity: .75; }
+  .snd-state { font-size: 11px; grid-column: 1; }
+  .snd-state.custom { font-weight: 700; color: #1a7f37; }
+  .snd-btns { grid-row: 1 / span 3; grid-column: 2; display: flex; gap: 4px; }
+  .snd-btns button { min-width: 0 !important; padding: 3px 9px !important; }
+  .snd-master { display: flex; align-items: center; gap: 5px; margin: 0 auto 0 0; color: inherit; font-size: inherit; }
+  .snd-master input { width: auto; margin: 0; }
+  body.xp #sndForm, body.w8 #sndForm { padding: 14px; }
+  #dtDlg { width: 330px; }
+  #dtDlg .dt-steps button, #dtDlg .dt-nav button { min-width: 0; padding: 2px 9px; }
+  #dtDlg .dt-timebox { flex-wrap: wrap; row-gap: 4px; }
+  .nw-status .nb-ic.doing::before { border-color: rgba(200, 140, 0, .3); border-top-color: #d68f00; }
+  .dt-quick { display: flex; gap: 6px; margin-bottom: 8px; }
+  .dt-quick button { flex: 1; min-width: 0; padding-left: 4px; padding-right: 4px; }
+  .dt-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .dt-nav button { min-width: 0; padding: 0 10px; font-size: 15px; line-height: 1.3; }
+  .dt-month { font-weight: 700; }
+  .dt-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; padding: 3px; background: #fff; color: #000; border: 1px solid #7f9db9; }
+  .dt-wd { padding: 2px 0; font-size: 10px; font-weight: 700; color: #666; }
+  .dt-d { padding: 4px 0; cursor: default; font-size: 12px; }
+  .dt-d.out { color: #a0a0a0; }
+  .dt-d:hover { background: #dbe7fb; }
+  .dt-d.today { box-shadow: inset 0 0 0 1px #c9442e; }
+  .dt-d.sel { background: #316ac5; color: #fff; font-weight: 700; }
+  .dt-timebox { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .dt-use { display: flex; align-items: center; gap: 4px; margin: 0; color: inherit; font-size: inherit; }
+  .dt-use input { width: auto; margin: 0; }
+  .dt-steps { display: flex; align-items: center; gap: 3px; }
+  .dt-steps.off { opacity: .4; pointer-events: none; }
+  .dt-steps b { min-width: 20px; text-align: center; }
+  .dt-steps button { min-width: 0; padding: 0 6px; }
+  .dt-sel { margin-top: 8px; font-weight: 700; }
+  body.w8 .dt-grid { border: 0; box-shadow: var(--sunken); }
+  body.w8 .dt-d:hover { background: #dcdcdc; }
+  body.w8 .dt-d.sel { background: #000080; }
+  body.w8 #dtForm, body.xp #dtForm { padding: 14px; }
+  .nw-due-btn { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+  .nw-due-clear { padding: 3px 8px !important; }
+  #evForm input[readonly] { cursor: pointer; }
+
   /* the orange line that shows where a dragged category will land */
   #startmenu li.ins-before, #w8 li.mi.ins-before { box-shadow: inset 0 3px 0 #ff9900; }
   #startmenu li.ins-after, #w8 li.mi.ins-after { box-shadow: inset 0 -3px 0 #ff9900; }
@@ -433,7 +582,7 @@
   body.xp dialog h2 { margin: -14px -14px 12px; padding: 7px 10px; font: 700 13px "Trebuchet MS", Tahoma, sans-serif; color: #fff;
                       text-shadow: 1px 1px 1px #0a246a;
                       background: linear-gradient(#0997ff, #0053ee 8%, #0050ee 40%, #06f 88%, #0058ee); }
-  body.xp #form, body.xp #askForm { padding: 14px; }
+  body.xp #form, body.xp #askForm, body.xp #cmdForm, body.xp #evForm, body.xp #remForm { padding: 14px; }
   #askDlg { width: 380px; }
   #askMsg:empty { display: none; }
   body.xp label { color: #000; font-size: 11px; }
@@ -500,6 +649,79 @@
   </form>
 </dialog>
 
+<dialog id="cmdDlg">
+  <form method="dialog" id="cmdForm">
+    <h2 id="cmdTitle">Add command</h2>
+    <label>Group (pick one or type a new name)
+      <span class="combo">
+        <input name="group" id="cmdGroupInput" required maxlength="60" placeholder="e.g. NX-OS: Switching" autocomplete="off">
+        <button type="button" class="combo-btn" id="cmdGroupBtn" tabindex="-1" aria-label="Show groups">▼</button>
+        <div class="combo-list" id="cmdGroupList" hidden></div>
+      </span></label>
+    <label>Description (optional)
+      <input name="label" maxlength="120" placeholder="e.g. Interface status and IPs" autocomplete="off"></label>
+    <label>Command (several lines are fine; words in &lt;angle brackets&gt; are placeholders)
+      <textarea name="text" id="cmdText" rows="4" required maxlength="2000" spellcheck="false" placeholder="show ip interface brief"></textarea></label>
+    <p class="cmd-note">Do not save passwords or keys here.</p>
+    <div class="actions">
+      <button type="button" id="cmdCancel">Cancel</button>
+      <button type="submit" class="primary" id="cmdSave">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="evDlg">
+  <form method="dialog" id="evForm">
+    <h2 id="evTitle">Add event</h2>
+    <label>Title <input name="title" required maxlength="120" placeholder="e.g. Change window: core switch upgrade" autocomplete="off"></label>
+    <div class="row">
+      <label style="flex:1.3">Date <input name="date" required readonly placeholder="Click to pick" autocomplete="off"></label>
+      <label style="flex:1">Time <input name="time" readonly placeholder="Click to pick" autocomplete="off"></label>
+      <label style="flex:.9">Lasts (min) <input name="minutes" type="number" min="0" max="10080" placeholder="60"></label>
+    </div>
+    <p class="cmd-note">Click the date or time to pick it. Untick "Time" in the picker for an all-day event.</p>
+    <div class="actions"><button type="button" id="evDelete" hidden>Delete</button><button type="button" id="evCancel">Cancel</button><button type="submit" class="primary">Save</button></div>
+  </form>
+</dialog>
+
+<dialog id="dtDlg">
+  <form method="dialog" id="dtForm">
+    <h2 id="dtTitle">Pick a date</h2>
+    <div class="dt-quick"><button type="button" data-q="today">Today</button><button type="button" data-q="tomorrow">Tomorrow</button><button type="button" data-q="week">Next week</button></div>
+    <div class="dt-nav"><button type="button" class="dt-prev" title="Previous month">‹</button><span class="dt-month"></span><button type="button" class="dt-next" title="Next month">›</button></div>
+    <div class="dt-grid"></div>
+    <div class="dt-timebox">
+      <label class="dt-use"><input type="checkbox" id="dtUse"> Time</label>
+      <span class="dt-steps">
+        <button type="button" id="dtHDn" title="Hour down">−</button><b id="dtH"></b><button type="button" id="dtHUp" title="Hour up">+</button>
+        <b>:</b>
+        <button type="button" id="dtMDn" title="5 minutes down">−</button><b id="dtM"></b><button type="button" id="dtMUp" title="5 minutes up">+</button>
+        <button type="button" id="dtAp" title="Switch AM / PM">AM</button>
+      </span>
+    </div>
+    <div class="dt-sel" id="dtSel"></div>
+    <div class="actions"><button type="button" id="dtClear">Clear</button><button type="button" id="dtCancel">Cancel</button><button type="button" class="primary" id="dtOk">OK</button></div>
+  </form>
+</dialog>
+
+<input type="file" id="sndFile" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac" hidden>
+<dialog id="sndDlg">
+  <form method="dialog" id="sndForm">
+    <h2>🎵 Alert sounds</h2>
+    <p class="snd-note">Choose your own sound for each alert (WAV, MP3, OGG, M4A or FLAC, up to 3 MB). Without one, the built-in beep plays.</p>
+    <div id="sndRows"></div>
+    <div class="actions"><label class="snd-master"><input type="checkbox" id="sndMaster"> Sound alerts on</label><button type="submit" class="primary">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="remDlg">
+  <form method="dialog" id="remForm">
+    <h2>⏰ Reminder</h2>
+    <div id="remList"></div>
+    <div class="actions"><button type="button" id="remSnooze">Snooze 10 min</button><button type="submit" class="primary">Dismiss</button></div>
+  </form>
+</dialog>
+
 <dialog id="askDlg">
   <form method="dialog" id="askForm">
     <h2 id="askTitle"></h2>
@@ -518,10 +740,10 @@
   <div class="userbg" hidden></div>
   <div id="deskW8" class="desk"></div>
   <div class="rightcol">
-    <div class="calbox"><div class="cal-nav"><button type="button" class="cal-prev" title="Previous month">‹</button><span class="cal-title" title="Click to come back to this month"></span><button type="button" class="cal-next" title="Next month">›</button></div><div class="cal-grid"></div><div class="cal-hol"></div></div>
+    <div class="calbox"><div class="cal-nav"><button type="button" class="cal-prev" title="Previous month">‹</button><span class="cal-title" title="Click to come back to this month"></span><button type="button" class="cal-next" title="Next month">›</button></div><div class="cal-grid"></div><div class="cal-hol"></div><div class="cal-upnext"></div><div class="cal-day" hidden></div></div>
     <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
   </div>
-  <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div></div>
+  <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span><span class="nm-vpn" hidden>VPN</span><button type="button" class="nm-det" title="Open the network details window">Details</button><button type="button" class="nm-snd" title="Sound alerts">🔔</button></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line dns"><i></i><span class="nm-name">DNS</span><span class="nm-val"></span><span class="nm-sub">lookup</span></div><div class="nm-line wifi" hidden><i></i><span class="nm-name">Wi-Fi</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line pc"><i></i><span class="nm-name">PC</span><span class="nm-val"></span></div></div>
   <div class="winlayer" id="layerW8"></div>
   <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
   <div id="w8menu" hidden></div>
@@ -536,10 +758,10 @@
   <div class="userbg" hidden></div>
   <div id="deskXp" class="desk"></div>
   <div class="rightcol">
-    <div class="calbox"><div class="cal-nav"><button type="button" class="cal-prev" title="Previous month">‹</button><span class="cal-title" title="Click to come back to this month"></span><button type="button" class="cal-next" title="Next month">›</button></div><div class="cal-grid"></div><div class="cal-hol"></div></div>
+    <div class="calbox"><div class="cal-nav"><button type="button" class="cal-prev" title="Previous month">‹</button><span class="cal-title" title="Click to come back to this month"></span><button type="button" class="cal-next" title="Next month">›</button></div><div class="cal-grid"></div><div class="cal-hol"></div><div class="cal-upnext"></div><div class="cal-day" hidden></div></div>
     <div class="notesbox"><div class="nb-head"><span>Notes</span><button type="button" class="nb-add" title="New note">＋</button></div><input class="nb-new" placeholder="New note, then press Enter" maxlength="200" autocomplete="off" hidden><div class="nb-list"></div><button type="button" class="nb-more" hidden></button></div>
   </div>
-  <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div></div>
+  <div class="netbox"><div class="nm-head"><span class="nm-dot"></span><span class="nm-verdict">Measuring…</span><span class="nm-vpn" hidden>VPN</span><button type="button" class="nm-det" title="Open the network details window">Details</button><button type="button" class="nm-snd" title="Sound alerts">🔔</button></div><canvas class="nm-chart" width="272" height="78"></canvas><div class="nm-line gw"><i></i><span class="nm-name">Gateway</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line net"><i></i><span class="nm-name">Google DNS</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line dns"><i></i><span class="nm-name">DNS</span><span class="nm-val"></span><span class="nm-sub">lookup</span></div><div class="nm-line wifi" hidden><i></i><span class="nm-name">Wi-Fi</span><span class="nm-val"></span><span class="nm-sub"></span></div><div class="nm-line pc"><i></i><span class="nm-name">PC</span><span class="nm-val"></span></div></div>
   <div class="winlayer" id="layerXp"></div>
   <div class="deskclock" aria-hidden="true"><div class="dc-time"><span class="dc-t"></span><span class="dc-ap"></span></div><div class="dc-date"></div></div>
   <div id="balloon" hidden><b>To begin, click here</b><br>Open the Start menu to find your tools.</div>
@@ -554,10 +776,14 @@
         <ul>
           <li id="xpAdd">➕ Add shortcut…</li>
           <li id="xpAddCat">📁 Add category…</li>
+          <li id="xpAddCmd">📋 Add command…</li>
+          <li id="xpStarterCmd">📥 Starter Cisco commands…</li>
           <li id="xpEdit"><span id="xpEditChk" class="chk"></span>✏️ Edit mode</li>
           <li id="xpBg">🖼️ Change background…</li>
           <li id="xpBgReset">🔄 Reset background</li>
           <li id="xpNet"><span id="xpNetChk" class="chk"></span>📶 Network monitor</li>
+          <li id="xpSnd"><span id="xpSndChk" class="chk"></span>🔔 Sound alerts</li>
+          <li id="xpSndTest">🎵 Alert sounds…</li>
           <li class="xsep"></li>
           <li id="xpBackup">💾 Backup (ZIP)…</li>
           <li id="xpRestore">📥 Restore (ZIP)…</li>
@@ -583,7 +809,8 @@
 const $ = s => document.querySelector(s);
 const UNCAT = 'Uncategorized';
 let shortcuts = [], categories = [], dividers = new Set(), editingId = null, dragId = null, dragCat = null;
-let calReady = false, calOffset = 0;                      // calOffset: months away from the current month (0 = this month)
+let cmdGroups = [];                                       // [{id, name, items: [{id, label, text}]}]
+let calReady = false, calOffset = 0;                     // calOffset: months away from the current month (0 = this month)
 
 const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -733,6 +960,7 @@ const otherTheme = () => isXp() ? ['w8', 'Windows 98 + 8'] : ['xp', 'Windows XP'
 const deskCtx = () => [
   { label: 'New shortcut…', fn: () => openDialog(null) },
   { label: 'New category…', fn: addCat },
+  { label: 'New event…', fn: () => openEventDialog() },
   { label: 'New note…', fn: () => { const i = deskBox().parentElement.querySelector('.nb-new'); i.hidden = false; i.focus(); } },
   { label: (document.body.classList.contains('editing') ? '✓ ' : '') + 'Edit mode', fn: toggleEdit },
   { label: (netOn ? '✓ ' : '') + 'Network monitor', fn: toggleNet },
@@ -783,10 +1011,130 @@ function render() {
 }
 
 async function load() {
-  const [s, c, m] = await Promise.all([api('GET', '/api/shortcuts'), api('GET', '/api/categories'), api('GET', '/api/menu')]);
-  shortcuts = s; categories = c; dividers = new Set(m.dividers || []);
+  const [s, c, m, k, ev] = await Promise.all([api('GET', '/api/shortcuts'), api('GET', '/api/categories'), api('GET', '/api/menu'),
+                                              api('GET', '/api/commands').catch(() => ({ groups: [] })), api('GET', '/api/events').catch(() => ({ events: [] }))]);
+  shortcuts = s; categories = c; dividers = new Set(m.dividers || []); cmdGroups = k.groups || []; events = ev.events || [];
   render();
+  if (calReady) renderCalendar();
 }
+
+/* ---------------- commands: click to copy ---------------- */
+const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, '0')).join('');
+const cloneGroups = () => JSON.parse(JSON.stringify(cmdGroups));
+const cmdCount = () => cmdGroups.reduce((n, g) => n + g.items.length, 0);
+
+async function saveCommands(groups, message) {
+  try { cmdGroups = (await api('PUT', '/api/commands', { groups })).groups; render(); if (message) toast(message); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function copyCommand(it) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(it.text); ok = true; }
+  catch {                                                  // older browsers: select a hidden box and copy from it
+    const t = Object.assign(document.createElement('textarea'), { value: it.text });
+    t.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.append(t); t.select();
+    try { ok = document.execCommand('copy'); } catch {}
+    t.remove();
+  }
+  const first = it.text.split('\n')[0];
+  ok ? toast('Copied: ' + (first.length > 60 ? first.slice(0, 57) + '…' : first) + (it.text.includes('\n') ? '  (+ more lines)' : ''))
+     : toast('Could not copy. Select the text and copy it by hand.', true);
+}
+
+const cmdGroupNames = () => cmdGroups.map(g => ({ v: g.name, l: g.name }));
+const closeCmdList = setupCombo($('#cmdGroupInput'), $('#cmdGroupList'), $('#cmdGroupBtn'), cmdGroupNames, 'group');
+$('#cmdDlg').addEventListener('close', closeCmdList);
+let cmdEdit = null;                                        // {gid, iid} while editing an existing command
+
+function openCmdDialog(group, item) {
+  cmdEdit = item ? { gid: group.id, iid: item.id } : null;
+  const f = $('#cmdForm');
+  $('#cmdTitle').textContent = item ? 'Edit command' : 'Add command';
+  f.group.value = group ? group.name : '';
+  f.label.value = item ? item.label : '';
+  f.text.value = item ? item.text : '';
+  $('#cmdDlg').showModal();
+  (group ? f.text : f.group).focus();
+}
+$('#cmdCancel').onclick = () => $('#cmdDlg').close();
+$('#cmdForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, name = f.group.value.replace(/\s+/g, ' ').trim(), text = f.text.value.trim();
+  if (!name || !text) return;
+  const groups = cloneGroups();
+  const item = { id: newId(), label: f.label.value.trim(), text };
+  let target = groups.find(g => g.name.toLowerCase() === name.toLowerCase());
+  if (!target) { target = { id: newId(), name, items: [] }; groups.push(target); }
+  let placed = false;
+  if (cmdEdit) {
+    for (const g of groups) {
+      const i = g.items.findIndex(x => x.id === cmdEdit.iid);
+      if (i < 0) continue;
+      item.id = cmdEdit.iid;
+      if (g === target) { g.items[i] = item; placed = true; }       // same group: keep its place in the list
+      else g.items.splice(i, 1);                                    // moved to another group
+    }
+  }
+  if (!placed) target.items.push(item);
+  $('#cmdDlg').close();
+  await saveCommands(groups, cmdEdit ? 'Command saved' : 'Command added');
+});
+
+async function deleteCommand(g, it) {
+  if (!await ask({ title: 'Delete command', message: `Delete "${it.label || it.text.split('\n')[0]}"?`, ok: 'Delete' })) return;
+  const groups = cloneGroups();
+  const gg = groups.find(x => x.id === g.id);
+  if (gg) gg.items = gg.items.filter(x => x.id !== it.id);
+  saveCommands(groups);
+}
+async function renameCmdGroup(g) {
+  const name = await ask({ title: 'Rename group', message: 'New name:', input: true, value: g.name, ok: 'Rename' });
+  if (!name || name === g.name) return;
+  const groups = cloneGroups();
+  groups.find(x => x.id === g.id).name = name;
+  saveCommands(groups);
+}
+async function deleteCmdGroup(g) {
+  if (!await ask({ title: 'Delete group', message: `Delete "${g.name}" and its ${g.items.length} command(s)?`, ok: 'Delete' })) return;
+  saveCommands(cloneGroups().filter(x => x.id !== g.id));
+}
+function moveCmdGroup(g, delta) {
+  const groups = cloneGroups(), i = groups.findIndex(x => x.id === g.id), j = i + delta;
+  if (i < 0 || j < 0 || j >= groups.length) return;
+  [groups[i], groups[j]] = [groups[j], groups[i]];
+  saveCommands(groups);
+}
+async function loadStarterCommands() {
+  try {
+    const starter = (await api('GET', '/api/commands/starter')).groups;
+    const groups = cloneGroups(), have = new Set(groups.map(g => g.name.toLowerCase()));
+    const add = starter.filter(g => !have.has(g.name.toLowerCase()));
+    if (!add.length) return toast('The starter commands are already there');
+    await saveCommands([...groups, ...add], `Added ${add.length} groups with ${add.reduce((n, g) => n + g.items.length, 0)} Cisco commands`);
+  } catch (e) { toast(e.message, true); }
+}
+
+const cmdItemCtx = (g, it) => [
+  { label: 'Copy command', fn: () => copyCommand(it) },
+  { label: 'Edit…', fn: () => openCmdDialog(g, it) },
+  null,
+  { label: 'Delete', fn: () => deleteCommand(g, it), danger: true },
+];
+const cmdGroupCtx = g => {
+  const i = cmdGroups.findIndex(x => x.id === g.id);
+  return [
+    { label: 'Add command to this group…', fn: () => openCmdDialog(g) },
+    { label: 'Rename group…', fn: () => renameCmdGroup(g) },
+    ...(i > 0 ? [{ label: 'Move up', fn: () => moveCmdGroup(g, -1) }] : []),
+    ...(i >= 0 && i < cmdGroups.length - 1 ? [{ label: 'Move down', fn: () => moveCmdGroup(g, 1) }] : []),
+    null,
+    { label: 'Delete group', fn: () => deleteCmdGroup(g), danger: true },
+  ];
+};
+const matchCmds = terms => cmdGroups.flatMap(g => g.items.map(it => ({ g, it })))
+  .filter(({ g, it }) => terms.every(t => (g.name + ' ' + it.label + ' ' + it.text).toLowerCase().includes(t)));
 
 async function launch(s) {
   usage[s.id] = (usage[s.id] || 0) + 1; store.set('usage', usage);
@@ -846,18 +1194,18 @@ function ask({ title, message = '', input = false, choices = null, value = '', o
 }
 
 // a text box with a drop-down of our own (themed, always shows the categories you created)
-function setupCombo(input, listEl, btn, getItems) {
+function setupCombo(input, listEl, btn, getItems, noun = 'category') {
   let hot = -1;
   const rows = () => [...listEl.querySelectorAll('.combo-item')];
   const close = () => { listEl.hidden = true; hot = -1; };
-  function pick(v) { input.value = v; close(); input.focus(); }
+  function pick(v) { input.value = v; close(); input.focus(); input.dispatchEvent(new Event('change', { bubbles: true })); }
   function open(filter = '') {
     const q = filter.trim().toLowerCase();
     const items = getItems().filter(it => !q || it.l.toLowerCase().includes(q)).filter(it => it.v || !q);
     listEl.textContent = '';
     if (!items.length) {
       const e = document.createElement('div'); e.className = 'combo-empty';
-      e.textContent = q ? `New category: “${filter.trim()}”` : 'No categories yet. Type a name to create one.';
+      e.textContent = q ? `New ${noun}: “${filter.trim()}”` : `No ${noun}s yet. Type a name to create one.`;
       listEl.append(e);
     }
     for (const it of items) {
@@ -1157,6 +1505,7 @@ restoreInput.onchange = async () => {
     await load();
     if (d.background) await loadBackground();
     await loadNotes();
+    await loadSoundInfo();
     toast(`Restored ${d.shortcuts} shortcuts and ${d.categories} categories`);
   } catch (e) { toast(e.message, true); }
 };
@@ -1188,6 +1537,7 @@ function setTheme(t) {
   store.set('theme', t);
   closeStart(); closeW8();
   closeAllNoteWins();                                           // windows live in the theme's own layer
+  closeNetWin();
   if (t === 'xp') showBalloon();
   render();
 }
@@ -1248,6 +1598,38 @@ function xpItem(s, terms, inMain, showCat) {
   return li;
 }
 
+// one command in the XP menu: click = copy; hover shows the full command
+function xpCommand(g, it, showGroup) {
+  const li = document.createElement('li');
+  li.className = 'xi xcmd';
+  li.title = it.text;
+  const ic = document.createElement('span'); ic.className = 'fi'; ic.textContent = '📋';
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = it.label || it.text.split('\n')[0];
+  li.append(ic, nm);
+  if (showGroup) { const c = document.createElement('span'); c.className = 'xcat'; c.textContent = g.name; li.append(c); }
+  li.onclick = () => { closeStart(); copyCommand(it); };
+  li._ctx = cmdItemCtx(g, it);
+  return li;
+}
+function xpCmdGroup(g) {
+  const li = document.createElement('li');
+  li.className = 'xc';
+  const fi = document.createElement('span'); fi.className = 'fi'; fi.textContent = '📋';
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = `${g.name} (${g.items.length})`;
+  const arr = document.createElement('span'); arr.className = 'arr'; arr.textContent = '▶';
+  const fly = document.createElement('div'); fly.className = 'flyout';
+  const ul = document.createElement('ul');
+  if (!g.items.length) { const e = document.createElement('li'); e.className = 'xempty'; e.textContent = '(Empty)'; ul.append(e); }
+  g.items.forEach(it => ul.append(xpCommand(g, it, false)));
+  fly.append(ul);
+  li.append(fi, nm, arr, fly);
+  li._ctx = cmdGroupCtx(g);
+  li.onmouseenter = () => openFly(li);
+  li.onmouseleave = scheduleClose;
+  li.onclick = e => { if (!e.target.closest('.flyout')) xp.open === li ? closeFly() : openFly(li); };
+  return li;
+}
+
 function xpCategory(cat, list) {
   const li = document.createElement('li');
   li.className = 'xc';
@@ -1283,7 +1665,11 @@ function renderXp() {
   if (terms.length) {                                  // flat search results
     const hits = shortcuts.filter(s => matches(s, terms)).sort(byName).slice(0, 80);
     if (!hits.length) { const e = document.createElement('li'); e.className = 'xempty'; e.textContent = 'No matches.'; ul.append(e); }
+    const cmds = matchCmds(terms).slice(0, 40);
+    if (hits.length || cmds.length) ul.querySelector('.xempty')?.remove();
     for (const s of hits) ul.append(xpItem(s, terms, true, true));
+    if (hits.length && cmds.length) { const sep = document.createElement('li'); sep.className = 'xsep'; ul.append(sep); }
+    for (const { g, it } of cmds) ul.append(xpCommand(g, it, true));
     return;
   }
 
@@ -1301,7 +1687,11 @@ function renderXp() {
     ul.append(li);
     if (cat !== UNCAT && dividers.has(cat)) { const sep = document.createElement('li'); sep.className = 'xsep'; ul.append(sep); }
   }
-  if (!shortcuts.length && !categories.length) {
+  if (cmdGroups.length) {                              // command groups come after the shortcut folders
+    if (ul.children.length) { const sep = document.createElement('li'); sep.className = 'xsep'; ul.append(sep); }
+    for (const g of cmdGroups) ul.append(xpCmdGroup(g));
+  }
+  if (!shortcuts.length && !categories.length && !cmdGroups.length) {
     const e = document.createElement('li'); e.className = 'xempty'; e.textContent = 'Nothing here yet — use “Add shortcut…”'; ul.append(e);
   }
 }
@@ -1317,6 +1707,8 @@ $('#xpSearch').addEventListener('keydown', e => {
 });
 $('#xpAdd').onclick = () => { closeStart(); openDialog(null); };
 $('#xpAddCat').onclick = () => { closeStart(); addCat(); };
+$('#xpAddCmd').onclick = () => { closeStart(); openCmdDialog(); };
+$('#xpStarterCmd').onclick = () => { closeStart(); loadStarterCommands(); };
 $('#xpEdit').onclick = toggleEdit;
 $('#xpModern').onclick = () => setTheme('w8');
 $('#xpOff').onclick = () => { closeStart(); powerOff(); };
@@ -1324,6 +1716,8 @@ $('#xpCoffee').onclick = () => { closeStart(); showDonate(); };
 $('#xpBg').onclick = () => { closeStart(); chooseBackground(); };
 $('#xpBgReset').onclick = () => { closeStart(); resetBackground(); };
 $('#xpNet').onclick = toggleNet;
+$('#xpSnd').onclick = toggleSound;
+$('#xpSndTest').onclick = () => { closeStart(); openSoundDialog(); };
 $('#xpBackup').onclick = () => { closeStart(); backupDownload(); };
 $('#xpRestore').onclick = () => { closeStart(); restoreFromZip(); };
 $('#xpReset').onclick = () => { closeStart(); factoryReset(); };
@@ -1410,6 +1804,27 @@ function shortcutItem(s) {
   return li;
 }
 
+// one command in the Windows 98 menu: click = copy; hover shows the full command; right-click = edit / delete
+function commandItem(g, it, groupName) {
+  const row = mi(it.label || it.text.split('\n')[0], { title: it.text, onClick: () => copyCommand(it) });
+  if (groupName) { const s = document.createElement('span'); s.className = 'arr'; s.textContent = groupName; s.style.cssText = 'font-size:10px;opacity:.65'; row.append(s); }
+  return withCtx(cmdItemCtx(g, it), row);
+}
+function commandsMenu() {
+  const ul = document.createElement('ul');
+  if (!cmdGroups.length) ul.append(mi('(No commands yet)', { disabled: true }));
+  for (const g of cmdGroups) {
+    const sub = document.createElement('ul');
+    if (!g.items.length) sub.append(mi('(Empty)', { disabled: true }));
+    g.items.forEach(it => sub.append(commandItem(g, it)));
+    ul.append(withCtx(cmdGroupCtx(g), mi(g.name, { icon: '📋', sub })));
+  }
+  ul.append(sepItem(),
+    mi('Add command…', { icon: '➕', onClick: () => openCmdDialog() }),
+    mi('Load starter Cisco commands…', { icon: '📥', onClick: loadStarterCommands }));
+  return ul;
+}
+
 function categoryItem(cat, list) {
   const sub = document.createElement('ul');
   if (!list.length) sub.append(mi('(Empty)', { disabled: true }));
@@ -1441,8 +1856,11 @@ function findItem(prev) {
     results.textContent = '';
     if (!terms.length) return closeSub(li);
     const hits = shortcuts.filter(s => matches(s, terms)).sort(byName).slice(0, 60);
-    if (!hits.length) results.append(mi('No matches', { disabled: true }));
+    const cmds = matchCmds(terms).slice(0, 40);              // commands match too: type "ospf" and click to copy
+    if (!hits.length && !cmds.length) results.append(mi('No matches', { disabled: true }));
     hits.forEach(s => results.append(shortcutItem(s)));
+    if (hits.length && cmds.length) results.append(sepItem());
+    cmds.forEach(({ g, it }) => results.append(commandItem(g, it, g.name)));
     openSub(li);
   };
   input.oninput = fill;
@@ -1494,6 +1912,8 @@ function renderW8() {
     mi('Change background…', { icon: '🖼️', onClick: chooseBackground }),
     mi('Reset background', { icon: '🔄', onClick: resetBackground }),
     mi((netOn ? '✓ ' : '') + 'Network monitor', { icon: '📶', onClick: toggleNet, keep: true }),
+    mi((netSoundOn ? '✓ ' : '') + 'Sound alerts', { icon: '🔔', onClick: toggleSound, keep: true }),
+    mi('Alert sounds…', { icon: '🎵', onClick: openSoundDialog }),
     sepItem(),
     mi('Backup (download ZIP)…', { icon: '💾', onClick: backupDownload }),
     mi('Restore from ZIP…', { icon: '📥', onClick: restoreFromZip }),
@@ -1504,6 +1924,7 @@ function renderW8() {
   top.append(
     mi('Programs', { icon: '📂', sub: programs }),
     mi('Favorites', used.length ? { icon: '⭐', sub: favorites } : { icon: '⭐', disabled: true, title: 'Shortcuts you launch show up here' }),
+    mi('Commands', { icon: '📋', sub: commandsMenu(), title: 'Click a command to copy it' }),
     sepItem(),
     mi('Add shortcut…', { icon: '➕', onClick: () => openDialog(null) }),
     mi('Add category…', { icon: '🗂️', onClick: addCat }),
@@ -1547,6 +1968,7 @@ function tickDeskClock() {
   });
   const dayKey = d.toDateString();                       // a new day starts: move the calendar's circle to the new date
   if (dayKey !== tickDeskClock.day) { tickDeskClock.day = dayKey; if (calReady) renderCalendar(); }
+  if (calReady) renderCalNext();                         // the countdown ticks
 }
 tickDeskClock(); setInterval(tickDeskClock, 1000);
 
@@ -1587,6 +2009,137 @@ function usHolidays(year) {
   return out;
 }
 
+/* ---- a date (and time) picker of our own: click a day, step the time. Nothing to type. ---- */
+// Resolves to 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM', to '' when "Clear" is pressed, or to null when cancelled.
+function pickDateTime({ value = '', withTime = true, title = 'Pick a date', allowClear = true } = {}) {
+  return new Promise(resolve => {
+    const dlg = $('#dtDlg'), q = s => dlg.querySelector(s), today = new Date();
+    let sel = /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : keyOf(today);
+    let [vy, vm] = sel.split('-').map(Number); vm -= 1;
+    let h24 = 9, min = 0, useTime = withTime, result = null;
+    if (value.length > 10) { h24 = +value.slice(11, 13); min = +value.slice(14, 16); }
+    else if (value) useTime = false;                                  // a date-only value stays date-only until you tick "Time"
+
+    const out = () => useTime && withTime ? `${sel}T${pad2(h24)}:${pad2(min)}` : sel;
+    const setDay = d => { sel = keyOf(d); vy = d.getFullYear(); vm = d.getMonth(); paint(); };
+    function paint() {
+      q('#dtTitle').textContent = title;
+      q('.dt-month').textContent = `${MONTH_NAMES[vm]} ${vy}`;
+      const grid = q('.dt-grid'); grid.textContent = '';
+      for (const w of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) grid.append(el('div', 'dt-wd', w));
+      const start = new Date(vy, vm, 1 - new Date(vy, vm, 1).getDay());
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = keyOf(d);
+        const c = el('div', 'dt-d' + (d.getMonth() !== vm ? ' out' : '') + (k === sel ? ' sel' : '') + (k === keyOf(today) ? ' today' : ''), d.getDate());
+        c.onclick = () => setDay(d);
+        c.ondblclick = () => q('#dtOk').click();
+        grid.append(c);
+      }
+      q('.dt-timebox').hidden = !withTime;
+      q('#dtUse').checked = useTime;
+      q('.dt-steps').classList.toggle('off', !useTime);
+      q('#dtH').textContent = pad2(h24 % 12 || 12); q('#dtM').textContent = pad2(min); q('#dtAp').textContent = h24 < 12 ? 'AM' : 'PM';
+      q('#dtClear').hidden = !allowClear;
+      q('#dtSel').textContent = fmtDateKey(sel) + (useTime && withTime ? '  ' + fmt12(`${pad2(h24)}:${pad2(min)}`) : '');
+    }
+    q('.dt-prev').onclick = () => { vm--; if (vm < 0) { vm = 11; vy--; } paint(); };
+    q('.dt-next').onclick = () => { vm++; if (vm > 11) { vm = 0; vy++; } paint(); };
+    q('[data-q=today]').onclick = () => setDay(new Date());
+    q('[data-q=tomorrow]').onclick = () => setDay(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1));
+    q('[data-q=week]').onclick = () => setDay(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7));
+    q('#dtHUp').onclick = () => { h24 = (h24 + 1) % 24; paint(); };
+    q('#dtHDn').onclick = () => { h24 = (h24 + 23) % 24; paint(); };
+    q('#dtMUp').onclick = () => { min = (Math.floor(min / 5) * 5 + 5) % 60; paint(); };
+    q('#dtMDn').onclick = () => { min = (Math.ceil(min / 5) * 5 + 55) % 60; paint(); };
+    q('#dtAp').onclick = () => { h24 = (h24 + 12) % 24; paint(); };
+    q('#dtUse').onchange = e => { useTime = e.target.checked; paint(); };
+    q('#dtOk').onclick = () => { result = out(); dlg.close(); };
+    q('#dtClear').onclick = () => { result = ''; dlg.close(); };
+    q('#dtCancel').onclick = () => dlg.close();
+    dlg.onclose = () => resolve(result);
+    paint();
+    dlg.showModal();
+    q('#dtOk').focus();
+  });
+}
+
+/* ---- your own events, due dates, the "Next:" countdown and reminders ---- */
+let events = [], calSel = null, remQueue = [], remSnooze = {};
+const MONTH_IDX = Object.fromEntries(MONTHS.map((m, i) => [m.toLowerCase(), i]));
+const keyOf = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const fmtDateKey = k => { const [y, m, d] = k.split('-'); return `${d}-${MONTHS[+m - 1]}-${y}`; };
+const fmt12 = hhmm => { const [h, m] = hhmm.split(':').map(Number); return `${pad2(h % 12 || 12)}:${pad2(m)} ${h < 12 ? 'AM' : 'PM'}`; };
+const fmtDue = iso => iso ? fmtDateKey(iso.slice(0, 10)) + (iso.length > 10 ? ' ' + fmt12(iso.slice(11, 16)) : '') : '';
+const dueTime = iso => new Date(iso.length > 10 ? iso : iso + 'T09:00');                 // a date without a time counts as 9:00 AM
+const isAllDay = e => e.minutes === 1440 && e.start.endsWith('T00:00');
+
+function parseDateText(s) {                                // "05-Nov-2026", "5 nov 2026", "05-11-2026", "today", "tomorrow"
+  s = s.trim().toLowerCase();
+  if (s === 'today' || s === 'tomorrow') { const d = new Date(); if (s === 'tomorrow') d.setDate(d.getDate() + 1); return keyOf(d); }
+  const m = s.match(/^(\d{1,2})[-\s/.]+([a-z]{3,9}|\d{1,2})[-\s/.]+(\d{4})$/);
+  if (!m) return null;
+  const mon = /^\d+$/.test(m[2]) ? +m[2] - 1 : MONTH_IDX[m[2].slice(0, 3)];
+  if (mon == null || mon < 0 || mon > 11) return null;
+  const d = +m[1], y = +m[3], dt = new Date(y, mon, d);
+  return dt.getMonth() === mon && dt.getDate() === d ? `${y}-${pad2(mon + 1)}-${pad2(d)}` : null;
+}
+function parseTimeText(s) {                                // "5:30 PM", "5pm", "17:30"; '' = no time; null = not understood
+  s = s.trim();
+  if (!s) return '';
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m?)?$/i);
+  if (!m) return null;
+  let h = +m[1]; const mi = +(m[2] || 0), ap = m[3] && m[3][0].toLowerCase();
+  if (mi > 59) return null;
+  if (ap) { if (h < 1 || h > 12) return null; h = h % 12 + (ap === 'p' ? 12 : 0); } else if (h > 23) return null;
+  return `${pad2(h)}:${pad2(mi)}`;
+}
+function parseDueText(s) {                                 // "05-Nov-2026 5:00 PM" or "tomorrow 9am" -> "2026-11-05T17:00"; '' -> ''; null -> bad
+  s = s.trim();
+  if (!s) return '';
+  const m = s.match(/^(today|tomorrow|.*?\d{4})\s*(.*)$/i);
+  if (!m) return null;
+  const date = parseDateText(m[1]), time = parseTimeText(m[2]);
+  return date == null || time == null ? null : time ? `${date}T${time}` : date;
+}
+const fmtIn = ms => {
+  const min = Math.max(0, Math.round(ms / 60000));
+  return min < 1 ? 'now' : min < 60 ? `${min} min` : min < 1440 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${Math.floor(min / 1440)} d ${Math.floor(min % 1440 / 60)} h`;
+};
+
+async function loadEvents() {
+  try { events = (await api('GET', '/api/events')).events || []; } catch {}
+  if (calReady) renderCalendar();
+}
+async function saveEvents(list, message) {
+  try { events = (await api('PUT', '/api/events', { events: list })).events; renderCalendar(); if (message) toast(message); }
+  catch (e) { toast(e.message, true); }
+}
+
+const itemsOn = key => [
+  ...events.filter(e => e.start.slice(0, 10) === key).map(e => ({ kind: 'ev', e, t: new Date(e.start).getTime() })),
+  ...notes.filter(n => n.due && n.status !== 'done' && n.due.slice(0, 10) === key).map(n => ({ kind: 'due', n, t: dueTime(n.due).getTime() })),
+].sort((a, b) => a.t - b.t);
+
+// the line under the calendar: what is happening now / what comes next / what is overdue
+function renderCalNext() {
+  const now = Date.now(), cands = [];
+  for (const e of events) {
+    const s = new Date(e.start).getTime(), end = s + e.minutes * 60000;
+    if (isAllDay(e)) { if (keyOf(new Date()) === e.start.slice(0, 10)) cands.push({ t: s, label: `Today: ${e.title}`, now: true }); else if (s > now) cands.push({ t: s, label: e.title }); }
+    else if (e.minutes > 0 && s <= now && now < end) cands.push({ t: s, label: `Now: ${e.title}`, now: true, left: end - now });
+    else if (s > now) cands.push({ t: s, label: e.title });
+  }
+  for (const n of notes) if (n.due && n.status !== 'done' && dueTime(n.due).getTime() > now) cands.push({ t: dueTime(n.due).getTime(), label: `Due: ${n.title}` });
+  cands.sort((a, b) => (b.now ? 1 : 0) - (a.now ? 1 : 0) || a.t - b.t);
+  const over = notes.filter(n => n.due && n.status !== 'done' && dueTime(n.due).getTime() < now).length;
+  document.querySelectorAll('.cal-upnext').forEach(box => {
+    box.textContent = '';
+    const c = cands[0];
+    if (c) box.append(el('div', '', c.now ? (c.left ? `${c.label} · ends in ${fmtIn(c.left)}` : c.label) : `Next: ${c.label} · in ${fmtIn(c.t - now)}`));
+    if (over) box.append(el('div', 'over', `⚠ ${over} note${over > 1 ? 's' : ''} overdue`));
+  });
+}
+
 function renderCalendar() {
   const now = new Date();
   const shown = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
@@ -1596,6 +2149,7 @@ function renderCalendar() {
   const start = new Date(Y, M, 1 - shown.getDay());       // the Sunday on or before the 1st; always 6 rows so the box never jumps in height
   const thisMonth = [...holidays.values()].filter(h => h.y === Y && h.m === M).sort((a, b) => a.d - b.d);
   const caption = thisMonth.map(h => `${h.d} ${h.name}${h.observed ? ' (observed)' : ''}`).join(' · ');
+  const todayKey = keyOf(now);
 
   document.querySelectorAll('.calbox').forEach(box => {
     box.querySelector('.cal-title').textContent = `${MONTH_NAMES[M]} ${Y}`;
@@ -1603,19 +2157,148 @@ function renderCalendar() {
     grid.textContent = '';
     for (const w of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) grid.append(el('div', 'cal-wd', w));
     for (let i = 0; i < 42; i++) {
-      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), key = keyOf(d);
       const cell = el('div', 'cal-d');
       cell.append(el('span', '', d.getDate()));
       if (d.getMonth() !== M) cell.classList.add('out');
       if (d.getDay() === 0 || d.getDay() === 6) cell.classList.add('we');
-      if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) cell.classList.add('today');
+      if (key === todayKey) cell.classList.add('today');
+      if (key === calSel) cell.classList.add('sel');
       const h = holidays.get(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
-      if (h && d.getMonth() === M) { cell.classList.add('hol'); cell.title = h.observed ? `${h.name} (observed)` : h.name; }
+      let tip = '';
+      if (h && d.getMonth() === M) { cell.classList.add('hol'); tip = h.observed ? `${h.name} (observed)` : h.name; }
+      const its = itemsOn(key);
+      if (its.some(x => x.kind === 'ev')) cell.classList.add('has-ev');
+      if (its.some(x => x.kind === 'due')) cell.classList.add('has-due');
+      if (its.length) tip += (tip ? '\n' : '') + its.map(x => x.kind === 'ev' ? x.e.title : 'Due: ' + x.n.title).join('\n');
+      if (tip) cell.title = tip;
+      cell.onclick = () => { calSel = calSel === key ? null : key; renderCalendar(); };
+      cell.ondblclick = () => openEventDialog(null, key);
+      cell._ctx = [{ label: `Add event on ${fmtDateKey(key)}…`, fn: () => openEventDialog(null, key) }];
       grid.append(cell);
     }
     box.querySelector('.cal-hol').textContent = caption;
+
+    const panel = box.querySelector('.cal-day');             // the list for the day you clicked
+    panel.hidden = !calSel;
+    panel.textContent = '';
+    if (calSel) {
+      panel.append(el('div', 'cal-day-h', fmtDateKey(calSel) + (calSel === todayKey ? ' (today)' : '')));
+      for (const x of itemsOn(calSel)) {
+        const row = el('div', 'cal-item');
+        if (x.kind === 'ev') {
+          const when = isAllDay(x.e) ? 'All day' : fmt12(x.e.start.slice(11, 16));
+          row.append(el('span', 'ci-t', when), el('span', 'ci-x', x.e.title));
+          row.title = 'Click to edit this event'; row.onclick = () => openEventDialog(x.e);
+        } else {
+          row.append(el('span', 'ci-t', x.n.due.length > 10 ? fmt12(x.n.due.slice(11, 16)) : 'Due'), el('span', 'ci-x', '⏰ ' + x.n.title));
+          row.title = 'Click to open this note'; row.onclick = () => openNote(x.n.id);
+        }
+        panel.append(row);
+      }
+      const add = el('div', 'cal-add', '＋ Add event on this day');
+      add.onclick = () => openEventDialog(null, calSel);
+      panel.append(add);
+    }
   });
+  renderCalNext();
 }
+
+// ---- the event form
+let evEditing = null;
+function openEventDialog(ev, dateKey) {
+  evEditing = ev || null;
+  const f = $('#evForm');
+  $('#evTitle').textContent = ev ? 'Edit event' : 'Add event';
+  f.title.value = ev ? ev.title : '';
+  f.date.value = fmtDateKey(ev ? ev.start.slice(0, 10) : dateKey || calSel || keyOf(new Date()));
+  f.time.value = ev ? (isAllDay(ev) ? '' : fmt12(ev.start.slice(11, 16))) : '09:00 AM';
+  f.minutes.value = ev ? (isAllDay(ev) ? '' : ev.minutes || '') : 60;
+  $('#evDelete').hidden = !ev;
+  $('#evDlg').showModal();
+  f.title.focus();
+}
+$('#evCancel').onclick = () => $('#evDlg').close();
+async function pickEventWhen() {
+  const f = $('#evForm'), date = parseDateText(f.date.value) || keyOf(new Date()), time = parseTimeText(f.time.value);
+  const v = await pickDateTime({ value: date + (time ? 'T' + time : ''), withTime: true, title: 'Event date and time', allowClear: false });
+  if (v === null) return;
+  f.date.value = fmtDateKey(v.slice(0, 10));
+  f.time.value = v.length > 10 ? fmt12(v.slice(11, 16)) : '';
+}
+['date', 'time'].forEach(n => {
+  const inp = $('#evForm')[n];
+  inp.onclick = pickEventWhen;
+  inp.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickEventWhen(); } };
+});
+$('#evForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, title = f.title.value.trim();
+  const date = parseDateText(f.date.value), time = parseTimeText(f.time.value);
+  if (!title) return toast('Please give the event a title', true);
+  if (!date) return toast('Please write the date like 05-Nov-2026', true);
+  if (time == null) return toast('Please write the time like 5:30 PM or 17:30, or leave it empty for an all-day event', true);
+  const allDay = !time;
+  const item = { id: evEditing ? evEditing.id : undefined, title, start: `${date}T${time || '00:00'}`, minutes: allDay ? 1440 : Math.max(0, Math.min(10080, parseInt(f.minutes.value, 10) || 0)) };
+  const list = events.filter(x => !evEditing || x.id !== evEditing.id).concat([item]);
+  $('#evDlg').close();
+  await saveEvents(list, evEditing ? 'Event saved' : 'Event added');
+  calSel = date; renderCalendar();
+});
+$('#evDelete').onclick = async () => {
+  if (!evEditing || !await ask({ title: 'Delete event', message: `Delete "${evEditing.title}"?`, ok: 'Delete' })) return;
+  const id = evEditing.id; $('#evDlg').close();
+  await saveEvents(events.filter(x => x.id !== id), 'Event deleted');
+};
+
+// ---- reminders: a pop-up when an event is about to start / has started, or a note is due. Only while the app is open.
+const firedKeys = new Set(store.get('fired', []));
+function checkReminders() {
+  const now = Date.now(), HOUR = 3600000;
+  const add = (key, text, noteId) => {
+    if (firedKeys.has(key) || (remSnooze[key] && remSnooze[key] > now) || remQueue.some(r => r.key === key)) return;
+    remQueue.push({ key, text, noteId });
+  };
+  for (const e of events) {
+    const s = new Date(e.start).getTime(), at = isAllDay(e) ? s + 9 * HOUR : s;
+    if (!isAllDay(e) && s - 10 * 60000 <= now && now < s) add(`ev10:${e.id}:${e.start}`, `In ${Math.max(1, Math.ceil((s - now) / 60000))} min: ${e.title}`);
+    if (now >= at && now < at + 6 * HOUR) add(`ev:${e.id}:${e.start}`, `${isAllDay(e) ? 'Today' : 'Now'}: ${e.title}`);
+  }
+  for (const n of notes) {
+    if (!n.due || n.status === 'done') continue;
+    const t = dueTime(n.due).getTime();
+    if (now >= t && now < t + 7 * 24 * HOUR) add(`due:${n.id}:${n.due}`, `${now - t > HOUR ? 'Overdue' : 'Due now'}: ${n.title}`, n.id);
+  }
+  if (remQueue.length && !$('#remDlg').open) showReminders();
+  else if (remQueue.length) paintReminders();
+}
+function paintReminders() {
+  const list = $('#remList'); list.textContent = '';
+  for (const r of remQueue) {
+    const row = el('div', 'rem-row'); row.append(el('span', 'rem-text', r.text));
+    if (r.noteId) { const b = el('button', '', 'Open note'); b.type = 'button'; b.onclick = () => { $('#remDlg').close(); openNote(r.noteId); }; row.append(b); }
+    list.append(row);
+  }
+}
+function showReminders() {
+  paintReminders();
+  $('#remDlg').showModal();
+  playSound('reminder');                                   // your own sound if you chose one; same 🔔 switch as the network alarms
+}
+function finishReminders(snoozeMinutes) {
+  const now = Date.now();
+  for (const r of remQueue) {
+    if (snoozeMinutes) remSnooze[r.key] = now + snoozeMinutes * 60000; else firedKeys.add(r.key);
+  }
+  remQueue = [];
+  store.set('fired', [...firedKeys].slice(-400));
+  if ($('#remDlg').open) $('#remDlg').close();
+}
+$('#remForm').addEventListener('submit', e => { e.preventDefault(); finishReminders(0); });
+$('#remSnooze').onclick = () => finishReminders(10);
+$('#remDlg').addEventListener('cancel', () => finishReminders(0));
+setInterval(checkReminders, 15000);
+setTimeout(checkReminders, 2500);
 
 function wireCalendar() {
   document.querySelectorAll('.calbox').forEach(box => {
@@ -1686,11 +2369,143 @@ function drawNet(canvas, d) {
   trace(g, NET_GW); trace(n, NET_IN);
 }
 
+/* ---- audio alerts: short beeps made by the browser itself (no sound files) ---- */
+let netSoundOn = store.get('netsound', true), audioCtx = null;
+const netAlert = { level: '', lastDown: 0, lastWarn: 0, wasDown: false };
+
+function audioReady() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx.state === 'running';
+  } catch { return false; }
+}
+// the browser only allows sound after you have clicked or pressed a key once in the window
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (netSoundOn) audioReady(); }, { capture: true }));
+
+const SOUNDS = {                                          // [frequency Hz, seconds, wave]; null frequency = a short pause
+  down: { vol: .16, notes: [[880, .17, 'square'], [null, .09], [880, .17, 'square'], [null, .09], [880, .17, 'square'], [null, .09], [660, .34, 'square']] },
+  warn: { vol: .14, notes: [[660, .12, 'sine'], [null, .08], [660, .12, 'sine']] },
+  up:   { vol: .15, notes: [[523, .13, 'sine'], [659, .13, 'sine'], [784, .26, 'sine']] },
+  reminder: { vol: .15, notes: [[784, .1, 'triangle'], [null, .06], [988, .1, 'triangle'], [null, .06], [1175, .24, 'triangle']] },
+};
+function beep(kind) {                                       // the built-in sound, made by the browser itself
+  if (!audioReady()) return false;
+  const s = SOUNDS[kind];
+  let t = audioCtx.currentTime + 0.03;
+  for (const [freq, dur, wave] of s.notes) {
+    if (freq) {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = wave; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);                   // quick fade in and out so there are no clicks
+      g.gain.exponentialRampToValueAtTime(s.vol, t + 0.015);
+      g.gain.setValueAtTime(s.vol, t + dur - 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    }
+    t += dur;
+  }
+  return true;
+}
+
+let soundInfo = {};                                          // {kind: {custom, ext, size, v}} from the server
+const audioEls = {};
+function playCustom(kind) {                                  // your own file; falls back to the beep if the browser refuses to play it
+  const i = soundInfo[kind];
+  if (!i || !i.custom) return false;
+  const src = `/api/sound/${kind}?v=${i.v}`;
+  let a = audioEls[kind];
+  if (!a || a._src !== src) { a = new Audio(src); a._src = src; audioEls[kind] = a; }
+  try { a.pause(); a.currentTime = 0; } catch {}
+  a.play().catch(() => beep(kind));
+  return true;
+}
+// force = true is for the Play buttons: you asked to hear it, so the master 🔔 switch does not mute it
+function playSound(kind, force = false) {
+  if (!netSoundOn && !force) return false;
+  return playCustom(kind) || beep(kind);
+}
+async function loadSoundInfo() { try { soundInfo = await api('GET', '/api/sounds'); } catch {} if ($('#sndDlg').open) paintSoundRows(); }
+
+// called every second with the current verdict; makes a sound only when something CHANGES (or every minute while it stays down)
+function netSound(level, nowMs = Date.now()) {
+  if (!level) return null;                                // still measuring
+  const prev = netAlert.level;
+  let played = null;
+  if (level === 'bad') {
+    if (prev !== 'bad' || nowMs - netAlert.lastDown > 60000) { played = 'down'; netAlert.lastDown = nowMs; netAlert.wasDown = true; }
+  } else if (level === 'warn') {
+    if (prev === 'ok' && nowMs - netAlert.lastWarn > 300000) { played = 'warn'; netAlert.lastWarn = nowMs; }   // at most one nag per 5 minutes
+  } else if (level === 'ok' && (prev === 'bad' || prev === 'warn') && netAlert.wasDown) {
+    played = 'up'; netAlert.wasDown = false;              // "it is back": only after a real outage, not after a slow patch
+  }
+  netAlert.level = level;
+  if (played) playSound(played);
+  return played;
+}
+function paintSoundIcon() {
+  document.querySelectorAll('.nm-snd').forEach(b => { b.textContent = netSoundOn ? '🔔' : '🔕'; b.title = netSoundOn ? 'Sound alerts on (click to mute)' : 'Sound alerts off (click to turn on)'; });
+  $('#xpSndChk').textContent = netSoundOn ? '✓' : '';
+}
+function toggleSound() {
+  netSoundOn = !netSoundOn; store.set('netsound', netSoundOn);
+  if (netSoundOn) { audioReady(); playSound('up'); }      // a confirmation chime (your own 'Back online' sound if you set one), and it unlocks the audio
+  paintSoundIcon(); renderW8();
+}
+const SOUND_KINDS = [
+  ['down', 'Network down', 'When your network or the internet stops answering'],
+  ['warn', 'Needs attention', 'When the network gets slow or starts losing packets'],
+  ['up', 'Back online', 'When the network is back after an outage'],
+  ['reminder', 'Reminder', 'Calendar events and note due dates'],
+];
+let sndKind = null;
+function paintSoundRows() {
+  const box = $('#sndRows'); box.textContent = '';
+  for (const [kind, name, desc] of SOUND_KINDS) {
+    const i = soundInfo[kind] || {}, row = el('div', 'snd-row');
+    row.append(el('b', '', name), el('div', 'snd-desc', desc));
+    row.append(el('div', 'snd-state' + (i.custom ? ' custom' : ''), i.custom ? `Your sound: ${i.ext.toUpperCase()}, ${Math.max(1, Math.round(i.size / 1024))} KB` : 'Built-in beep'));
+    const btns = el('div', 'snd-btns');
+    const mk = (label, title, fn) => { const b = el('button', '', label); b.type = 'button'; b.title = title; b.onclick = fn; return b; };
+    btns.append(mk('▶ Play', 'Hear it now', () => { audioReady(); playSound(kind, true); }),
+                mk('Upload…', 'Choose your own sound file', () => { sndKind = kind; $('#sndFile').value = ''; $('#sndFile').click(); }));
+    if (i.custom) btns.append(mk('Reset', 'Go back to the built-in beep', () => resetSound(kind)));
+    row.append(btns);
+    box.append(row);
+  }
+  $('#sndMaster').checked = netSoundOn;
+}
+function openSoundDialog() { audioReady(); paintSoundRows(); $('#sndDlg').showModal(); }
+$('#sndMaster').onchange = e => { if (e.target.checked !== netSoundOn) toggleSound(); paintSoundRows(); };
+$('#sndFile').onchange = async () => {
+  const f = $('#sndFile').files[0];
+  if (!f || !sndKind) return;
+  if (f.size > 3 * 1024 * 1024) return toast('That sound file is too big. Please use one under 3 MB.', true);
+  try {
+    const r = await fetch('/api/sound/' + sndKind, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not save the sound');
+    await loadSoundInfo(); paintSoundRows();
+    audioReady(); playSound(sndKind, true);                 // play it straight away so you can hear your choice
+    toast('Sound saved. Playing it now.');
+  } catch (e) { toast(e.message, true); }
+};
+async function resetSound(kind) {
+  try { await api('DELETE', '/api/sound/' + kind); await loadSoundInfo(); paintSoundRows(); toast('Back to the built-in beep'); }
+  catch (e) { toast(e.message, true); }
+}
+
+const trailingLost = pts => { let n = 0; for (let i = pts.length - 1; i >= 0 && pts[i][1] == null; i--) n++; return n; };
+
 function renderNet(d) {
   const gw = netStats(d.gw, d.now), nt = netStats(d.inet, d.now);
+  gw.streak = trailingLost(d.gw); nt.streak = trailingLost(d.inet);
   let level = 'ok', text = 'Network good';
   if (!gw.n && !nt.n) { level = ''; text = 'Measuring…'; }
   else if (!d.gateway) { level = 'bad'; text = 'No gateway found'; }
+  else if (gw.streak >= 3) { level = 'bad'; text = 'Local network down'; }          // 3 lost replies in a row: do not wait a whole minute
+  else if (nt.streak >= 3) { level = 'bad'; text = 'Internet unreachable'; }
   else if (gw.n >= 4 && gw.loss >= 50) { level = 'bad'; text = 'Local network down'; }
   else if (nt.n >= 4 && nt.loss >= 50) { level = 'bad'; text = 'Internet unreachable'; }
   else if (gw.loss > 3) { level = 'warn'; text = 'Local network losing packets'; }
@@ -1707,13 +2522,217 @@ function renderNet(d) {
     line.querySelector('.nm-sub').textContent = `${Math.round(st.loss)}% loss`;
     line.title = st.n ? `Last minute: average ${fmtMs(st.avg)} ms, best ${fmtMs(st.min)}, worst ${fmtMs(st.max)}, jitter ${fmtMs(st.jitter)} ms, ${Math.round(st.loss)}% lost` : '';
   };
+  netSound(level);
   document.querySelectorAll('.netbox').forEach(box => {
+    box.classList.toggle('alarm', level === 'bad');
     box.querySelector('.nm-dot').className = 'nm-dot ' + level;
     box.querySelector('.nm-verdict').textContent = text;
     fill(box.querySelector('.nm-line.gw'), 'Gateway', d.gateway || '(not found)', gw);
     fill(box.querySelector('.nm-line.net'), 'Google DNS', d.internet + (d.via === 'tcp' ? ' (TCP)' : ''), nt);
     drawNet(box.querySelector('.nm-chart'), d);
+    renderNetExtras(box, d);
   });
+}
+
+const fmtDur = s => s == null ? '' : s < 60 ? `${Math.round(s)} s` : s < 3600 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : `${Math.floor(s / 3600)} h ${Math.round(s % 3600 / 60)} min`;
+const clockText = t => { const d = new Date(t * 1000); return `${pad2(d.getHours() % 12 || 12)}:${pad2(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`; };
+
+// the extra rows in the small monitor box: DNS speed, Wi-Fi, PC health, VPN badge, and the outage count
+function renderNetExtras(box, d) {
+  const dns = box.querySelector('.nm-line.dns'), dv = dns.querySelector('.nm-val');
+  const ms = d.dns && d.dns.ms;
+  dns.querySelector('.nm-name').textContent = 'DNS ' + ((d.dns && d.dns.server) || '(none found)');
+  dv.textContent = ms != null ? `${fmtMs(ms)} ms` : d.dns && d.dns.server ? 'timeout' : '–';
+  dv.className = 'nm-val' + (ms == null && d.dns && d.dns.server ? ' bad' : ms > 150 ? ' warn' : '');
+  dns.title = 'How long your DNS server takes to answer one lookup. Slow DNS feels like a slow internet even when ping is fine.';
+
+  const wf = box.querySelector('.nm-line.wifi');
+  wf.hidden = !d.wifi;
+  if (d.wifi) {
+    const w = d.wifi;
+    wf.querySelector('.nm-name').textContent = 'Wi-Fi ' + w.ssid;
+    const v = wf.querySelector('.nm-val');
+    v.textContent = w.signal != null ? w.signal + '%' : '';
+    v.className = 'nm-val' + (w.signal != null && w.signal < 40 ? ' warn' : '');
+    wf.querySelector('.nm-sub').textContent = [w.channel ? 'ch ' + w.channel : '', w.band || ''].filter(Boolean).join(' · ');
+    wf.title = `Signal ${w.signal}% · ${w.radio || ''} · ${w.band || ''} · channel ${w.channel || '?'} · ${w.rate || '?'} Mbps`;
+  }
+
+  const s = d.sys || {}, pc = box.querySelector('.nm-line.pc'), pv = pc.querySelector('.nm-val');
+  pv.textContent = [s.cpu != null ? `CPU ${s.cpu}%` : '', s.mem != null ? `RAM ${s.mem}%` : '', s.disk_free != null ? `${s.disk} ${s.disk_free}% free` : ''].filter(Boolean).join(' · ');
+  pv.style.cssText = 'text-align:right;flex:1;font-size:10px;font-weight:600;';
+  pv.className = 'nm-val' + ((s.cpu > 85 || s.mem > 90 || s.disk_free < 10) ? ' warn' : '');
+
+  const vpn = box.querySelector('.nm-vpn');
+  vpn.hidden = !(d.vpn && d.vpn.length);
+  vpn.title = (d.vpn || []).join('\n');
+  const verdict = box.querySelector('.nm-verdict');
+  verdict.title = d.outages24 ? `${d.outages24} outage${d.outages24 > 1 ? 's' : ''} in the last 24 hours (see Details)` : 'No outages in the last 24 hours';
+}
+
+/* ---- the details window: 1 hour of history, the hosts you chose to watch, and the outage log ---- */
+const NET_COLORS = { gateway: '#62e87a', internet: '#ffd23f' }, NET_EXTRA = ['#4fc3f7', '#ff8a65', '#ce93d8', '#f48fb1'];
+let netWin = null;
+const netColor = (id, i) => NET_COLORS[id] || NET_EXTRA[(i - 2) % NET_EXTRA.length];
+
+function closeNetWin() { if (netWin) { clearInterval(netWin.timer); netWin.el.remove(); netWin = null; } }
+
+function openNetWin() {
+  if (netWin) { focusWin(netWin.el); return; }
+  const w = el('div', 'nwin netwin');
+  w.style.left = Math.max(10, (innerWidth - 700) / 2) + 'px'; w.style.top = '16px';
+  w.innerHTML = `
+    <div class="nw-bar"><span>📶</span><span class="nw-name">Network details</span><button type="button" class="nw-x" title="Close">✕</button></div>
+    <div class="nw-body">
+      <div class="nw-row"><span>Show</span><div class="nw-status nd-range"></div></div>
+      <canvas class="nd-chart" height="230"></canvas>
+      <div class="nd-hover">Move the mouse over the chart to read a time.</div>
+      <table class="nd-table"><thead><tr><th>Target</th><th>Now</th><th>Average</th><th>Best</th><th>Worst</th><th>Lost</th><th>Jitter</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="nd-info"></div>
+      <div class="nw-row nd-add"><span>Watch</span><input class="nd-name" placeholder="Name (optional)" maxlength="40" autocomplete="off"><input class="nd-host" placeholder="Host name or IP, e.g. 1.1.1.1 or mail.example.com" autocomplete="off"><button type="button" class="nd-addbtn">Add</button></div>
+      <div class="nd-out-head"><b>Outage log</b> <span class="nd-out-sub">(a drop is logged after 3 lost replies in a row; recorded only while Tools Manager is open)</span><button type="button" class="nd-clear">Clear log</button></div>
+      <div class="nw-logs nd-out"></div>
+    </div>`;
+  noteLayer().append(w); focusWin(w);
+  netWin = { el: w, range: store.get('netrange', 900), data: null, outages: [], info: null, timer: setInterval(loadNetWin, 3000) };
+  const q = s => w.querySelector(s);
+
+  for (const [secs, label] of [[300, '5 min'], [900, '15 min'], [3600, '1 hour']]) {
+    const b = el('button', '', label); b.type = 'button'; b.dataset.r = secs;
+    b.onclick = () => { netWin.range = secs; store.set('netrange', secs); loadNetWin(); };
+    q('.nd-range').append(b);
+  }
+  q('.nw-x').onclick = closeNetWin;
+  w.addEventListener('mousedown', () => focusWin(w));
+  q('.nw-bar').addEventListener('mousedown', e => {                    // drag by the title bar
+    if (e.target.closest('button')) return;
+    const r = w.getBoundingClientRect(), lr = noteLayer().getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    const move = ev => { w.style.left = Math.max(0, Math.min(lr.width - 60, ev.clientX - dx - lr.left)) + 'px'; w.style.top = Math.max(0, Math.min(lr.height - 30, ev.clientY - dy - lr.top)) + 'px'; };
+    const up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', move); addEventListener('mouseup', up); e.preventDefault();
+  });
+  q('.nd-clear').onclick = async () => {
+    if (!await ask({ title: 'Clear outage log', message: 'Delete every entry in the outage log?', ok: 'Clear' })) return;
+    try { await api('DELETE', '/api/net/outages'); loadNetWin(); } catch (e) { toast(e.message, true); }
+  };
+  const add = async () => {
+    const host = q('.nd-host').value.trim(); if (!host) return;
+    try {
+      const list = (await api('GET', '/api/net/targets')).targets.concat([{ name: q('.nd-name').value, host }]);
+      await api('PUT', '/api/net/targets', { targets: list });
+      q('.nd-host').value = ''; q('.nd-name').value = ''; toast('Now watching ' + host); loadNetWin();
+    } catch (e) { toast(e.message, true); }
+  };
+  q('.nd-addbtn').onclick = add;
+  q('.nd-host').onkeydown = e => { if (e.key === 'Enter') add(); };
+  q('.nd-table tbody').addEventListener('click', async e => {
+    const b = e.target.closest('.nd-rm'); if (!b) return;
+    try { const list = (await api('GET', '/api/net/targets')).targets.filter(t => t.id !== b.dataset.id); await api('PUT', '/api/net/targets', { targets: list }); loadNetWin(); }
+    catch (err) { toast(err.message, true); }
+  });
+  const cv = q('.nd-chart');
+  cv.addEventListener('mousemove', e => hoverNetWin(e, cv));
+  cv.addEventListener('mouseleave', () => { q('.nd-hover').textContent = 'Move the mouse over the chart to read a time.'; });
+  loadNetWin();
+}
+
+async function loadNetWin() {
+  if (!netWin) return;
+  try {
+    const [h, o, n] = await Promise.all([api('GET', '/api/net/history?range=' + netWin.range), api('GET', '/api/net/outages'), api('GET', '/api/net')]);
+    if (!netWin) return;
+    netWin.data = h; netWin.outages = o; netWin.info = n;
+    paintNetWin();
+  } catch {}
+}
+
+function paintNetWin() {
+  const w = netWin.el, h = netWin.data, q = s => w.querySelector(s);
+  w.querySelectorAll('.nd-range button').forEach(b => b.classList.toggle('on', +b.dataset.r === netWin.range));
+  drawHistory(q('.nd-chart'), h, netWin.outages);
+
+  const tb = q('.nd-table tbody'); tb.textContent = '';
+  h.series.forEach((s, i) => {
+    const st = s.stats, last = s.points.length ? s.points[s.points.length - 1] : null, tr = el('tr');
+    const name = el('td'); const sw = el('span', 'nd-sw'); sw.style.background = netColor(s.id, i);
+    name.append(sw, `${s.name} `, el('span', 'nd-host-txt', s.host)); tr.append(name);
+    for (const v of [last && last[1] != null ? fmtMs(last[1]) + ' ms' : '–', st.avg != null ? fmtMs(st.avg) + ' ms' : '–', st.min != null ? fmtMs(st.min) : '–',
+                     st.max != null ? fmtMs(st.max) : '–', st.n ? st.loss + '%' : '–', st.jitter != null ? fmtMs(st.jitter) : '–']) tr.append(el('td', 'num', v));
+    const rm = el('td', 'num');
+    if (i >= 2) { const b = el('button', 'nd-rm', '✕'); b.type = 'button'; b.dataset.id = s.id; b.title = 'Stop watching this host'; rm.append(b); }
+    tr.append(rm); tb.append(tr);
+  });
+
+  const n = netWin.info || {}, parts = [];
+  if (n.dns) parts.push(`<b>DNS</b> ${n.dns.server || 'none found'}${n.dns.ms != null ? ' · ' + fmtMs(n.dns.ms) + ' ms' : n.dns.server ? ' · no answer' : ''}`);
+  if (n.wifi) parts.push(`<b>Wi-Fi</b> ${n.wifi.ssid} · signal ${n.wifi.signal}% · channel ${n.wifi.channel || '?'} · ${[n.wifi.radio, n.wifi.band].filter(Boolean).join(' ')} · ${n.wifi.rate || '?'} Mbps`);
+  else parts.push('<b>Wi-Fi</b> not connected (cable, or no Wi-Fi)');
+  parts.push('<b>VPN</b> ' + (n.vpn && n.vpn.length ? n.vpn.join(', ') : 'none detected'));
+  const s = n.sys || {};
+  if (s.mem != null) parts.push(`<b>PC</b> CPU ${s.cpu != null ? s.cpu + '%' : '–'} · memory ${s.mem}% · ${s.disk} ${s.disk_free}% free`);
+  q('.nd-info').innerHTML = parts.join('<br>');
+
+  const out = q('.nd-out'); out.textContent = '';
+  if (!netWin.outages.length) out.append(el('div', 'nw-log sys', 'No outages recorded. Good!'));
+  for (const e of netWin.outages) {
+    const row = el('div', 'nw-log'), end = e.end || n.now;
+    row.append(el('span', 'nw-time', `${new Date(e.start * 1000).toLocaleDateString([], { day: '2-digit', month: 'short' })} ${clockText(e.start)}`),
+               el('span', 'nw-text', `${e.target === 'gateway' ? 'Local network (gateway) down' : 'Internet unreachable'} for ${fmtDur(end - e.start)}${e.end ? '' : ' (still down)'}${e.cut ? ' (monitoring stopped)' : ''}`));
+    out.append(row);
+  }
+}
+
+function drawHistory(canvas, h, outages) {
+  const cssW = canvas.clientWidth || 676, H = 230, dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== Math.round(cssW * dpr)) { canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(H * dpr); }
+  const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, cssW, H);
+  const left = 38, right = 10, top = 8, bot = 20, start = h.now - h.range;
+  const peak = Math.max(0, ...h.series.flatMap(s => s.points.map(p => p[2] || 0)));
+  const maxMs = [30, 100, 300, 1000, 3000].find(m => m >= peak * 1.1) || 3000;
+  const X = t => left + (t - start) / h.range * (cssW - left - right);
+  const Y = ms => H - bot - Math.log10(1 + Math.max(0, ms)) / Math.log10(1 + maxMs) * (H - top - bot);
+  c.font = '10px "Segoe UI", Tahoma, sans-serif'; c.lineWidth = 1;
+  for (const e of outages) {                                                  // red bands where something was down
+    const a = Math.max(e.start, start), b = Math.min(e.end || h.now, h.now);
+    if (b > start && a < h.now) { c.fillStyle = e.target === 'gateway' ? 'rgba(255,70,70,.28)' : 'rgba(255,170,60,.25)'; c.fillRect(X(a), top, Math.max(2, X(b) - X(a)), H - top - bot); }
+  }
+  for (const ms of [1, 10, 100, 1000]) {
+    if (ms > maxMs) break;
+    const y = Math.round(Y(ms)) + .5;
+    c.strokeStyle = 'rgba(255,255,255,.18)'; c.setLineDash([2, 3]); c.beginPath(); c.moveTo(left, y); c.lineTo(cssW - right, y); c.stroke(); c.setLineDash([]);
+    c.fillStyle = 'rgba(255,255,255,.7)'; c.fillText(ms + ' ms', 3, y + 3);
+  }
+  for (let i = 0; i <= 4; i++) {                                              // time labels
+    const t = start + h.range * i / 4, x = Math.round(X(t)) + .5;
+    c.strokeStyle = 'rgba(255,255,255,.09)'; c.beginPath(); c.moveTo(x, top); c.lineTo(x, H - bot); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.7)'; c.textAlign = i === 0 ? 'left' : i === 4 ? 'right' : 'center'; c.fillText(clockText(t), Math.min(cssW - 2, Math.max(2, x)), H - 5);
+  }
+  c.textAlign = 'left';
+  h.series.forEach((s, i) => {
+    const color = netColor(s.id, i);
+    c.strokeStyle = color; c.lineWidth = 1.7; c.lineJoin = 'round'; c.shadowColor = color; c.shadowBlur = 4;
+    let pen = false; c.beginPath();
+    for (const [t, avg] of s.points) { if (avg == null) { pen = false; continue; } pen ? c.lineTo(X(t), Y(avg)) : c.moveTo(X(t), Y(avg)); pen = true; }
+    c.stroke(); c.shadowBlur = 0;
+    c.fillStyle = color + '77';                                                 // small dots at the worst reading of each slice
+    for (const [t, , mx] of s.points) if (mx != null) c.fillRect(X(t) - 1, Y(mx) - 1, 2, 2);
+    c.strokeStyle = '#ff4d4d'; c.lineWidth = 2;                                 // red ticks where replies were lost
+    for (const [t, , , loss] of s.points) if (loss > 0) { const x = Math.round(X(t)) + .5; c.beginPath(); c.moveTo(x, H - bot); c.lineTo(x, H - bot - Math.max(3, Math.round(loss / 100 * 22))); c.stroke(); }
+  });
+  if (!h.series.some(s => s.points.length)) { c.fillStyle = 'rgba(255,255,255,.75)'; c.textAlign = 'center'; c.fillText('Collecting data… history builds up while this app is open.', cssW / 2, H / 2); c.textAlign = 'left'; }
+}
+
+function hoverNetWin(e, cv) {
+  if (!netWin || !netWin.data) return;
+  const h = netWin.data, r = cv.getBoundingClientRect(), left = 38, right = 10;
+  const t = h.now - h.range + (e.clientX - r.left - left) / (r.width - left - right) * h.range;
+  if (t < h.now - h.range || t > h.now) return;
+  const bits = h.series.map(s => {
+    let best = null;
+    for (const p of s.points) if (!best || Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p;
+    return best && Math.abs(best[0] - t) <= h.bucket * 1.5 ? `${s.name} ${best[1] != null ? fmtMs(best[1]) + ' ms' : 'lost'}${best[3] ? ' (' + best[3] + '% lost)' : ''}` : null;
+  }).filter(Boolean);
+  netWin.el.querySelector('.nd-hover').textContent = clockText(t) + (bits.length ? '  —  ' + bits.join('  ·  ') : '');
 }
 
 async function pollNet() { try { renderNet(await api('GET', '/api/net')); } catch {} }
@@ -1723,6 +2742,8 @@ function startNet() {
 }
 function stopNet() { clearInterval(netTimer); netTimer = null; document.querySelectorAll('.netbox').forEach(b => { b.hidden = true; }); }
 function paintNetCheck() { $('#xpNetChk').textContent = netOn ? '✓' : ''; }
+document.querySelectorAll('.nm-snd').forEach(b => { b.onclick = toggleSound; });
+document.querySelectorAll('.nm-det, .nm-chart').forEach(b => { b.onclick = openNetWin; });
 function toggleNet() {                                   // off = no pings at all: the server only pings while somebody is looking
   netOn = !netOn; store.set('netmon', netOn);
   netOn ? startNet() : stopNet();
@@ -1774,6 +2795,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 async function loadNotes() {
   try { notes = await api('GET', '/api/notes'); } catch {}
   renderNotes();
+  if (calReady) renderCalendar();                               // due dates show up as dots on the calendar
   noteWins.forEach((w, id) => { const n = notes.find(x => x.id === id); n ? paintNoteWin(w, n) : closeNoteWin(id); });
 }
 
@@ -1795,8 +2817,13 @@ function renderNotes() {
 function noteRow(n) {
   const r = el('div', 'nb-row' + (n.status === 'done' ? ' done' : ''));
   r.title = `${n.title}\n${NOTE_LABEL[n.status]}`;
-  const dot = el('span', 'nb-dot'); dot.dataset.s = n.status;
-  r.append(dot, el('span', 'nb-title', n.title), el('span', 'nb-st', NOTE_LABEL[n.status]));
+  r.append(el('span', 'nb-ic ' + n.status), el('span', 'nb-title', n.title));
+  if (n.due && n.status !== 'done') {
+    const t = dueTime(n.due), over = t.getTime() < Date.now(), today = keyOf(t) === keyOf(new Date());
+    const due = el('span', 'nb-due' + (over ? ' over' : ''), (over ? '⚠ ' : '⏰ ') + (today && n.due.length > 10 ? fmt12(n.due.slice(11, 16)) : fmtDateKey(n.due.slice(0, 10)).slice(0, 6)));
+    due.title = 'Due ' + fmtDue(n.due); r.append(due);
+  }
+
   r.onclick = () => openNote(n.id);
   r._ctx = [
     { label: 'Open', fn: () => openNote(n.id) }, null,
@@ -1853,13 +2880,16 @@ function buildNoteWin(id) {
     <div class="nw-body">
       <div class="nw-row"><span>Title</span><input class="nw-title-in" maxlength="200" autocomplete="off"></div>
       <div class="nw-row"><span>Status</span><div class="nw-status"></div></div>
+      <div class="nw-row"><span>Due</span><button type="button" class="nw-due-btn">Pick a date…</button><button type="button" class="nw-due-clear" title="Remove the due date" hidden>✕</button></div>
+      <div class="nw-row"><span>Tool</span><span class="combo"><input class="nw-tool-in" placeholder="Link a shortcut: type to search" autocomplete="off"><button type="button" class="combo-btn nw-tool-btn" tabindex="-1" aria-label="Show shortcuts">▼</button><div class="combo-list nw-tool-list" hidden></div></span><button type="button" class="nw-tool-open" title="Open the linked tool">Open</button></div>
       <div class="nw-logs"></div>
       <div class="nw-add"><input class="nw-log-in" placeholder="Add a log entry, press Enter" maxlength="2000" autocomplete="off"><button type="button" class="nw-log-btn">Add</button></div>
       <div class="nw-foot"><button type="button" class="nw-delete">Delete note</button><button type="button" class="nw-close">Close</button></div>
     </div>`;
   const q = s => w.querySelector(s);
   for (const [key, label] of NOTE_STATUS) {
-    const b = el('button', '', label); b.type = 'button'; b.dataset.s = key;
+    const b = el('button', ''); b.type = 'button'; b.dataset.s = key;
+    b.append(el('span', 'nb-ic ' + key), label);
     b.onclick = () => setNoteStatus(id, key);
     q('.nw-status').append(b);
   }
@@ -1876,6 +2906,27 @@ function buildNoteWin(id) {
   };
   title.onchange = rename;
   title.onkeydown = e => { if (e.key === 'Enter') title.blur(); };
+
+  const setDue = async v => {
+    try { await api('PUT', `/api/notes/${id}`, { due: v }); await loadNotes(); } catch (e) { toast(e.message, true); }
+  };
+  q('.nw-due-btn').onclick = async () => {                       // pick the due date from a calendar
+    const n = notes.find(x => x.id === id); if (!n) return;
+    const v = await pickDateTime({ value: n.due || '', withTime: true, title: 'Due date' });
+    if (v !== null && v !== (n.due || '')) setDue(v);
+  };
+  q('.nw-due-clear').onclick = () => setDue('');
+
+  const tool = q('.nw-tool-in');                                 // link a note to one of your shortcuts
+  setupCombo(tool, q('.nw-tool-list'), q('.nw-tool-btn'), () => [...shortcuts].sort(byName).map(s => ({ v: s.name, l: s.name })), 'shortcut');
+  tool.onchange = async () => {
+    const n = notes.find(x => x.id === id); if (!n) return;
+    const name = tool.value.trim().toLowerCase();
+    const hit = name ? shortcuts.find(s => s.name.toLowerCase() === name) : null;
+    if (name && !hit) { toast('No shortcut with that name. Pick one from the list.', true); const cur = shortcuts.find(s => s.id === n.link); tool.value = cur ? cur.name : ''; return; }
+    try { await api('PUT', `/api/notes/${id}`, { link: hit ? hit.id : '' }); await loadNotes(); } catch (e) { toast(e.message, true); }
+  };
+  q('.nw-tool-open').onclick = () => { const n = notes.find(x => x.id === id), s = n && shortcuts.find(x => x.id === n.link); if (s) launch(s); else toast('This note is not linked to a tool yet', true); };
 
   const logIn = q('.nw-log-in');
   const addLog = async () => {
@@ -1911,6 +2962,11 @@ function paintNoteWin(w, n) {
   const title = w.querySelector('.nw-title-in');
   if (document.activeElement !== title) title.value = n.title;
   w.querySelectorAll('.nw-status button').forEach(b => b.classList.toggle('on', b.dataset.s === n.status));
+  w.querySelector('.nw-due-btn').textContent = n.due ? '📅  ' + fmtDue(n.due) : 'Pick a date…';
+  w.querySelector('.nw-due-clear').hidden = !n.due;
+  const toolIn = w.querySelector('.nw-tool-in'), linked = shortcuts.find(s => s.id === n.link);
+  if (document.activeElement !== toolIn) toolIn.value = linked ? linked.name : '';
+  w.querySelector('.nw-tool-open').disabled = !linked;
   const logs = w.querySelector('.nw-logs'), grew = logs.children.length < n.log.length;
   logs.textContent = '';
   for (const e of n.log) {
@@ -1927,6 +2983,8 @@ wireCalendar();
 renderCalendar();
 calReady = true;
 paintNetCheck();
+paintSoundIcon();
+loadSoundInfo();
 startNet();
 loadNotes();
 loadBackground();
