@@ -1,6 +1,9 @@
 # your own shortcuts, icons and logs - never commit these
 data/
 
+# copies of the old code that an update keeps for 'go back'
+update-backup/
+
 # Python
 .venv/
 __pycache__/

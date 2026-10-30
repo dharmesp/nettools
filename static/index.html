@@ -547,6 +547,14 @@
   .nwin .nw-status button { white-space: nowrap; }
 
   /* the date picker */
+  #updDlg { width: 460px; }
+  .upd-ver { margin: 0 0 6px; font-size: 12px; opacity: .8; }
+  .upd-msg { margin: 0 0 8px; font-weight: 700; line-height: 1.4; }
+  .upd-msg.bad { color: #b3261e; }
+  .upd-msg a { color: inherit; }
+  .upd-notes { max-height: 150px; overflow-y: auto; margin: 0 0 8px; padding: 6px 8px; font-size: 12px; white-space: pre-wrap; line-height: 1.4;
+               border: 1px dotted rgba(128,128,128,.7); -webkit-user-select: text; user-select: text; scrollbar-width: thin; }
+  body.xp #updForm, body.w8 #updForm { padding: 14px; }
   #sndDlg { width: 470px; }
   .snd-note { margin: 0 0 8px; font-size: 12px; line-height: 1.4; }
   .snd-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 6px 0; border-top: 1px dotted rgba(128,128,128,.55); }
@@ -745,6 +753,16 @@
   </form>
 </dialog>
 
+<dialog id="updDlg">
+  <form method="dialog" id="updForm">
+    <h2>⬆ Update Tools Manager</h2>
+    <p id="updVer" class="upd-ver"></p>
+    <p id="updMsg" class="upd-msg">Checking…</p>
+    <div id="updNotes" class="upd-notes" hidden></div>
+    <p class="cmd-note">Your shortcuts, notes and all other data are not touched by an update. The old code is kept in the <b>update-backup</b> folder.</p>
+    <div class="actions"><button type="button" id="updCheck">Check again</button><button type="button" id="updGo" class="primary" hidden>Update now</button><button type="submit" id="updClose">Close</button></div>
+  </form>
+</dialog>
 <input type="file" id="sndFile" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac" hidden>
 <dialog id="sndDlg">
   <form method="dialog" id="sndForm">
@@ -826,6 +844,7 @@
           <li id="xpSnd"><span id="xpSndChk" class="chk"></span>🔔 Sound alerts</li>
           <li id="xpSndTest">🎵 Alert sounds…</li>
           <li class="xsep"></li>
+          <li id="xpUpdate">⬆️ Check for updates…</li>
           <li id="xpBackup">💾 Backup (ZIP)…</li>
           <li id="xpRestore">📥 Restore (ZIP)…</li>
           <li id="xpReset">🧹 Factory reset…</li>
@@ -1767,6 +1786,7 @@ $('#xpBgReset').onclick = () => { closeStart(); resetBackground(); };
 $('#xpNet').onclick = toggleNet;
 $('#xpSnd').onclick = toggleSound;
 $('#xpSndTest').onclick = () => { closeStart(); openSoundDialog(); };
+$('#xpUpdate').onclick = () => { closeStart(); openUpdateDialog(); };
 $('#xpBackup').onclick = () => { closeStart(); backupDownload(); };
 $('#xpRestore').onclick = () => { closeStart(); restoreFromZip(); };
 $('#xpReset').onclick = () => { closeStart(); factoryReset(); };
@@ -1964,6 +1984,7 @@ function renderW8() {
     mi((netSoundOn ? '✓ ' : '') + 'Sound alerts', { icon: '🔔', onClick: toggleSound, keep: true }),
     mi('Alert sounds…', { icon: '🎵', onClick: openSoundDialog }),
     sepItem(),
+    mi('Check for updates…', { icon: '⬆️', onClick: openUpdateDialog }),
     mi('Backup (download ZIP)…', { icon: '💾', onClick: backupDownload }),
     mi('Restore from ZIP…', { icon: '📥', onClick: restoreFromZip }),
     mi('Factory reset…', { icon: '🧹', onClick: factoryReset }));
@@ -2482,6 +2503,47 @@ function playSound(kind, force = false) {
   if (!netSoundOn && !force) return false;
   return playCustom(kind) || beep(kind);
 }
+/* ---------------- update: only when you click ---------------- */
+let updInfo = null;
+async function runUpdateCheck() {
+  const msg = $('#updMsg'), go = $('#updGo'), notes = $('#updNotes');
+  msg.className = 'upd-msg'; msg.textContent = 'Checking GitHub…'; go.hidden = true; notes.hidden = true; $('#updCheck').disabled = true;
+  try {
+    const v = await api('GET', '/api/version'); $('#updVer').textContent = 'You have version ' + v.version;
+    updInfo = await api('POST', '/api/update/check', {});
+    if (updInfo.newer) {
+      msg.textContent = `Version ${updInfo.latest} is available.`;
+      if (updInfo.notes.trim()) { notes.textContent = updInfo.notes.trim(); notes.hidden = false; }
+      if (updInfo.git) { msg.textContent += ' This copy was installed with git, so update it by running "git pull" in its folder.'; }
+      else go.hidden = false;
+    } else msg.textContent = `You have the latest version (${updInfo.current}).`;
+  } catch (e) {
+    msg.className = 'upd-msg bad'; msg.textContent = e.message;
+    const a = document.createElement('a'); a.href = 'https://github.com/dharmesp/nettools/releases'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open the Releases page';
+    msg.append(document.createElement('br'), a);
+  }
+  $('#updCheck').disabled = false;
+}
+function openUpdateDialog() { $('#updDlg').showModal(); runUpdateCheck(); }
+$('#updCheck').onclick = runUpdateCheck;
+$('#updGo').onclick = async () => {
+  const msg = $('#updMsg'); const want = updInfo && updInfo.latest;
+  $('#updGo').hidden = true; $('#updCheck').disabled = true; $('#updClose').disabled = true; $('#updNotes').hidden = true;
+  msg.className = 'upd-msg'; msg.textContent = 'Downloading and installing… please keep this window open.';
+  try {
+    const r = await api('POST', '/api/update/apply', {});
+    msg.textContent = `Updated to ${r.to}. Restarting…`;
+    for (let i = 0; i < 90; i++) {                                  // wait for the new server, then reload the page onto the new code
+      await new Promise(res => setTimeout(res, 700));
+      try { if ((await api('GET', '/api/version')).version === want) { location.reload(); return; } } catch {}
+    }
+    msg.className = 'upd-msg bad'; msg.textContent = 'The update is installed, but the restart did not finish. Close Tools Manager and start it again from the Desktop icon.';
+  } catch (e) {
+    msg.className = 'upd-msg bad'; msg.textContent = e.message; $('#updCheck').disabled = false;
+  }
+  $('#updClose').disabled = false;
+};
+
 async function loadSoundInfo() { try { soundInfo = await api('GET', '/api/sounds'); } catch {} if ($('#sndDlg').open) paintSoundRows(); }
 
 // called every second with the current verdict; makes a sound only when something CHANGES (or every minute while it stays down)

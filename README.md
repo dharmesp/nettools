@@ -74,6 +74,14 @@ Click **Start**, then **Shut Down**. Or just close the window.
   background and your alert sounds) to a ZIP, restore it later, or wipe it all.
 - **Shut Down** from the menu, or just close the window: the server stops itself.
 
+## Updating
+Open the menu and choose **Settings > Check for updates...** (in XP: **Check for updates...** on the right). It looks for
+a newer release on GitHub only when you click, shows what is new, and installs it when you press **Update now**.
+Your shortcuts, notes and all other data are not touched. The old code is kept in the `update-backup` folder, and if the
+update fails part-way the old version is put back automatically. A copy installed with `git` should use `git pull` instead.
+The very first time, a copy that does not have this button has to be updated by hand (download the new ZIP, extract it over
+the old folder, keep your `data` folder).
+
 ## Requirements
 - Windows 10 or 11
 - Python 3.9 or newer (tested with 3.12). There is nothing to `pip install`: only the Python standard library is used,
@@ -112,6 +120,8 @@ Everything you create is stored in the `data` folder next to the program (`short
   (`8.8.8.8` / `8.8.4.4`), plus any hosts you add. It does this only while the app is open and the monitor is on, and you can
   switch it off in *Settings*. Nothing else is sent anywhere.
 - Do not save passwords or keys in Commands or Notes.
+- **Check for updates** downloads code from this project's GitHub Releases over HTTPS, checks it, and only replaces the
+  program files (never `data`). You trust the project's GitHub account when you click it.
 
 ## Project layout
 | Path | What it is |
@@ -121,6 +131,7 @@ Everything you create is stored in the `data` folder next to the program (`short
 | `static/favicon.svg`, `favicon.ico` | App icon |
 | `starter_commands.py` | The starter Cisco commands you can load into the Commands list |
 | `donate.py` | Support links and QR code, compiled into the program |
+| `VERSION` | The installed version number, used by *Check for updates* |
 | `install.bat` | One-click setup: makes the `.venv`, adds the Desktop icon, starts the app |
 | `run.bat` | Starts the app |
 | `requirements.txt` | Empty on purpose: no extra packages are needed |

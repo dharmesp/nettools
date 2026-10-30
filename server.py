@@ -1290,6 +1290,194 @@ def factory_reset():
 NET = NetMonitor()
 
 
+# ---------------------------------------------------------------- updates (button only: nothing is contacted until you click)
+VERSION_FILE = os.path.join(ROOT, "VERSION")
+UPDATE_API = os.environ.get("TOOLS_UPDATE_API") or "https://api.github.com/repos/dharmesp/nettools/releases/latest"
+UPDATE_ZIP = os.environ.get("TOOLS_UPDATE_ZIP") or "https://github.com/dharmesp/nettools/archive/refs/tags/{tag}.zip"
+UPDATE_TESTING = bool(os.environ.get("TOOLS_UPDATE_API"))      # lets the self-tests use a local fake release server
+BACKUP_ROOT = os.path.join(ROOT, "update-backup")
+# an update may only replace these (never data/, .venv/ or anything else)
+UPDATE_ROOT_FILES = {"server.py", "donate.py", "starter_commands.py", "install.bat", "run.bat", "requirements.txt", "README.md",
+                     "readme-marketing.md", "LICENSE", "VERSION", ".gitignore", ".gitattributes"}
+UPDATE_DIRS = ("static/", "docs/", "sample-data/")
+MAX_UPDATE_BYTES = 40 * 1024 * 1024
+MAX_UPDATE_UNZIPPED = 120 * 1024 * 1024
+TAG_RE = re.compile(r"^[vV]?\d+(\.\d+){1,3}$")
+update_lock = threading.Lock()
+
+
+def current_version():
+    try:
+        with open(VERSION_FILE, encoding="utf-8") as f:
+            v = f.read().strip()
+        return v if TAG_RE.match(v) else "0"
+    except OSError:
+        return "0"
+
+
+def ver_tuple(v):
+    return tuple(int(x) for x in str(v).lstrip("vV").split("."))
+
+
+def update_fetch(url, limit):
+    """Download over HTTPS with the certificate checked (never the relaxed check used for icons: this is code)."""
+    if not url.startswith("https://") and not (UPDATE_TESTING and url.startswith("http://127.0.0.1")):
+        raise ValueError("Updates are only downloaded over HTTPS")
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/vnd.github+json, */*"})
+    try:
+        with urllib.request.urlopen(req, timeout=25) as r:
+            data = r.read(limit + 1)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise ValueError("No release was found on GitHub yet")
+        if e.code in (403, 429):
+            raise ValueError("GitHub is limiting requests right now. Please try again in a few minutes.")
+        raise ValueError(f"GitHub answered with error {e.code}")
+    except (urllib.error.URLError, OSError):
+        raise ValueError("Could not reach GitHub. Your network or proxy may block it; you can update by hand from the Releases page.")
+    if len(data) > limit:
+        raise ValueError("The download is larger than expected, so it was refused")
+    return data
+
+
+def update_check():
+    cur = current_version()
+    info = {"current": cur, "git": os.path.isdir(os.path.join(ROOT, ".git")), "releases": donate.REPO_URL + "/releases"}
+    try:
+        rel = json.loads(update_fetch(UPDATE_API, 1 << 20))
+    except json.JSONDecodeError:
+        raise ValueError("GitHub gave an answer that could not be read")
+    tag = str(rel.get("tag_name") or "")
+    if not TAG_RE.match(tag):
+        raise ValueError("The latest release has an unexpected name")
+    info.update(tag=tag, latest=tag.lstrip("vV"), notes=str(rel.get("body") or "")[:3000], newer=ver_tuple(tag) > ver_tuple(cur))
+    return info
+
+
+def parse_update_zip(blob, latest):
+    """Validate a release ZIP completely and return {relative path: bytes} of the files an update may replace. Touches nothing."""
+    try:
+        z = zipfile.ZipFile(io.BytesIO(blob))
+    except zipfile.BadZipFile:
+        raise ValueError("The downloaded file is not a valid ZIP")
+    infos = [i for i in z.infolist() if not i.is_dir()]
+    if not infos or sum(i.file_size for i in infos) > MAX_UPDATE_UNZIPPED:
+        raise ValueError("The downloaded update is empty or too large")
+    top = infos[0].filename.split("/")[0]
+    files = {}
+    for i in infos:
+        name = i.filename
+        if not name.startswith(top + "/"):
+            raise ValueError("The downloaded update has an unexpected layout")
+        rel = name[len(top) + 1:]
+        if "\\" in rel or ":" in rel or rel.startswith("/") or any(p in ("", ".", "..") for p in rel.split("/")):
+            raise ValueError("The downloaded update contains an unsafe file name, so nothing was changed")
+        if rel in UPDATE_ROOT_FILES or rel.startswith(UPDATE_DIRS):
+            if rel in files:
+                raise ValueError("The downloaded update lists the same file twice, so nothing was changed")
+            files[rel] = z.read(i)
+    for need in ("server.py", "static/index.html", "VERSION"):
+        if need not in files:
+            raise ValueError(f"The downloaded update is incomplete ({need} is missing), so nothing was changed")
+    try:
+        got = files["VERSION"].decode("utf-8").strip()
+        if not TAG_RE.match(got) or ver_tuple(got) != ver_tuple(latest):
+            raise ValueError
+    except (UnicodeDecodeError, ValueError):
+        raise ValueError("The downloaded update does not match the release it was published as, so nothing was changed")
+    try:
+        compile(files["server.py"], "server.py", "exec")           # never install a server that cannot even start
+    except (SyntaxError, ValueError):
+        raise ValueError("The downloaded server code is damaged, so nothing was changed")
+    if b"<html" not in files["static/index.html"][:2000].lower():
+        raise ValueError("The downloaded page is damaged, so nothing was changed")
+    return files
+
+
+def backup_code(files):
+    """Copy the files an update will replace into update-backup/<old version>-<time>/ ; keep the newest three."""
+    dest = os.path.join(BACKUP_ROOT, f"{time.strftime('%Y%m%d-%H%M%S')}-v{current_version()}")      # time first, so the names sort oldest to newest
+    for rel in files:
+        src = os.path.join(ROOT, *rel.split("/"))
+        if os.path.isfile(src):
+            out = os.path.join(dest, *rel.split("/"))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            shutil.copy2(src, out)
+    os.makedirs(dest, exist_ok=True)
+    keep = sorted(d for d in os.listdir(BACKUP_ROOT) if os.path.isdir(os.path.join(BACKUP_ROOT, d)))
+    for old in keep[:-3]:
+        shutil.rmtree(os.path.join(BACKUP_ROOT, old), ignore_errors=True)
+    return dest
+
+
+def swap_files(files):
+    """Write the new files. If anything fails part-way, every file already changed is put back."""
+    done = []
+    try:
+        for rel in sorted(files):
+            target = os.path.join(ROOT, *rel.split("/"))
+            old = None
+            if os.path.isfile(target):
+                with open(target, "rb") as f:
+                    old = f.read()
+                if old == files[rel]:
+                    continue                                 # unchanged: leave it alone (keeps the big starter ZIP from being rewritten)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            tmp = target + ".update-tmp"
+            with open(tmp, "wb") as f:
+                f.write(files[rel])
+            try:
+                os.replace(tmp, target)
+            except OSError:
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                raise
+            done.append((target, old))
+    except Exception:
+        for target, old in reversed(done):
+            try:
+                if old is None:
+                    os.remove(target)
+                else:
+                    with open(target, "wb") as f:
+                        f.write(old)
+            except OSError:
+                pass
+        raise
+    return len(done)
+
+
+def schedule_restart():
+    """Start the new server (it waits for this one to let go of the port), then stop this one."""
+    def work():
+        time.sleep(0.6)                                       # let the answer reach the page first
+        subprocess.Popen([sys.executable, os.path.join(ROOT, "server.py"), "--no-open", "--wait"], cwd=ROOT,
+                         creationflags=0x00000008 | 0x00000200, close_fds=True,
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if HTTPD:
+            HTTPD.shutdown()
+    threading.Thread(target=work, daemon=True).start()
+
+
+def update_apply():
+    with update_lock:
+        if os.path.isdir(os.path.join(ROOT, ".git")):
+            raise ValueError("This copy was installed with git. Update it by running 'git pull' in its folder.")
+        info = update_check()
+        if not info["newer"]:
+            raise ValueError("You already have the latest version")
+        files = parse_update_zip(update_fetch(UPDATE_ZIP.format(tag=info["tag"]), MAX_UPDATE_BYTES), info["latest"])
+        backup = backup_code(files)
+        try:
+            changed = swap_files(files)
+        except Exception as e:
+            raise ValueError(f"The update could not be installed, so your old version was put back ({type(e).__name__}).")
+        schedule_restart()
+        return {"ok": True, "from": info["current"], "to": info["latest"], "files": changed, "backup": os.path.relpath(backup, ROOT)}
+
+
 def public(item):
     out = dict(item)
     out["icon"] = f"/icons/{item['icon']}" if item.get("icon") else None
@@ -1381,6 +1569,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/notes":
             with db_lock:
                 return self.send_json(load_notes())
+        if path == "/api/version":
+            return self.send_json({"version": current_version()})
         if path == "/api/menu":
             with db_lock:
                 return self.send_json({"dividers": load_dividers()})
@@ -1507,6 +1697,10 @@ class Handler(BaseHTTPRequestHandler):
             if parts == ["api", "net", "outages"] and method == "DELETE":
                 NET.clear_outages()
                 return self.send_json({"ok": True})
+            if parts == ["api", "update", "check"] and method == "POST":    # only when you click the button
+                return self.send_json(update_check())
+            if parts == ["api", "update", "apply"] and method == "POST":
+                return self.send_json(update_apply())
             if parts == ["api", "menu"] and method == "PUT":                # dividers
                 d = self.read_json().get("dividers")
                 if not isinstance(d, list):
@@ -1853,15 +2047,20 @@ def main():
     if sys.stdout is None or sys.stderr is None:   # started with pythonw (no console): keep a log file instead
         os.makedirs(DATA_DIR, exist_ok=True)
         sys.stdout = sys.stderr = open(os.path.join(DATA_DIR, "server.log"), "a", buffering=1, encoding="utf-8")
-    try:
-        httpd = Server((HOST, PORT), Handler)
-    except OSError:
+    httpd = None
+    for attempt in range(60 if "--wait" in sys.argv else 1):      # --wait: we were started by an update; the old server is still closing
+        try:
+            httpd = Server((HOST, PORT), Handler)
+            break
+        except OSError:
+            time.sleep(0.5)
+    if httpd is None:
         print(f"Port {PORT} already in use - assuming the server is running; opening window.")
         if "--no-open" not in sys.argv:
             open_app_window(MAIN_URL, 1100, 760)
         return
     HTTPD = httpd
-    print(f"Tools Manager running at {MAIN_URL}  (use Shut Down in the app, or close this window, to stop)")
+    print(f"Tools Manager {current_version()} running at {MAIN_URL}  (use Shut Down in the app, or close this window, to stop)")
     if "--no-open" not in sys.argv:
         threading.Timer(0.5, open_app_window, (MAIN_URL, 1100, 760)).start()
     try:
