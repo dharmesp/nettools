@@ -218,6 +218,7 @@
   .dicon:hover { background: rgba(255,255,255,.14); }
   .dicon.sel { background: rgba(49,106,197,.6); border-color: rgba(255,255,255,.8); border-style: dotted; }
   .dicon.dragging { opacity: .45; }
+  .dicon .icon.vault-key { background: linear-gradient(135deg, #3a64a8, #14305f); font-size: 26px; text-shadow: none; }
 
   /* pop-up forms: movable title bar and a close button, like a window */
   dialog h2 { cursor: move; }
@@ -355,6 +356,44 @@
   body.w8 .nwin .nw-x { width: 18px; height: 16px; background: #c0c0c0; color: #000; border: 0; box-shadow: var(--raised); font-size: 10px; }
   body.w8 .nwin input, body.w8 .nw-logs { border: 0; box-shadow: var(--sunken); }
   body.w8 .nwin input:focus { outline: 1px dotted #000; }
+
+  /* password vault window */
+  .vaultwin { width: 720px; max-width: calc(100vw - 20px); }
+  .vaultwin .nw-body { gap: 8px; }
+  .vw-gate { display: flex; flex-direction: column; gap: 8px; max-width: 380px; margin: 14px auto 18px; }
+  .vw-gate h3 { margin: 0; font: 700 13px Tahoma, sans-serif; }
+  .vw-gate p { margin: 0; line-height: 1.45; }
+  .vw-gate input { flex: none; width: 100%; box-sizing: border-box; padding: 5px 6px; }
+  .vw-gate .vw-acts { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .vw-warn { padding: 6px 8px; background: #fff8d8; border: 1px solid #d9b84a; }
+  .vw-err { color: #b00020; min-height: 14px; }
+  .vw-link { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; color: #0645ad !important; text-decoration: underline; }
+  .vw-tool { display: flex; gap: 6px; align-items: center; }
+  .vw-split { display: flex; gap: 8px; height: 400px; }
+  .vw-list { width: 236px; flex: none; overflow-y: auto; scrollbar-width: thin; background: #fff; border: 1px solid #7f9db9; }
+  .vw-cat { padding: 3px 6px 2px; font-weight: 700; color: #444; background: #f1efe6; border-bottom: 1px solid #e0ddd0; position: sticky; top: 0; }
+  .vw-item { padding: 4px 6px; border-bottom: 1px dotted #ddd; cursor: default; }
+  .vw-item:hover { background: #eef3fc; }
+  .vw-item.sel { background: #316ac5; color: #fff; }
+  .vw-item .vw-n { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+  .vw-item .vw-u { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .75; }
+  .vw-empty { padding: 14px 10px; color: #666; text-align: center; line-height: 1.5; white-space: pre-line; }
+  .vw-detail { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+  .vw-detail .nw-row > span:first-child { width: 64px; }
+  .vw-detail textarea { flex: 1; min-height: 90px; resize: none; font: 11px Tahoma, sans-serif; padding: 4px 5px; color: #000;
+                        background: #fff; border: 1px solid #7f9db9; }
+  .vw-detail .vw-pw { font-family: Consolas, "Courier New", monospace; letter-spacing: .5px; }
+  .vw-meta { color: #666; }
+  .vw-foot { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .vw-foot .vw-sp { flex: 1; }
+  .vw-hint { color: #555; font-size: 10px; }
+  .vw-dirty { color: #b05a00; font-weight: 700; }
+  .vw-secret { -webkit-text-security: disc; }                 /* masked like a password box, but Edge/Chrome do not offer to save it */
+  .vw-secret.show { -webkit-text-security: none; }
+  body.w8 .vw-list, body.w8 .vw-detail textarea { border: 0; box-shadow: var(--sunken); }
+  body.w8 .vw-item.sel { background: #000080; }
+  body.w8 .vw-cat { background: #d4d0c8; }
+  body.w8 .vw-warn { background: #ffffe1; border-color: #000; }
 
   /* network details window */
   .netwin { width: 700px; max-width: calc(100vw - 20px); }
@@ -643,6 +682,82 @@
                           background: linear-gradient(#fff, #ece9d8 85%, #d6d0c0); }
   body.xp dialog button:hover { box-shadow: inset 0 0 0 2px #f8b330; }
   body.xp dialog button.primary { font-weight: 700; }
+
+  /* ================= log off: welcome screen (XP) / lock screen (98 + 8) ================= */
+  #logon { position: fixed; inset: 0; z-index: 900; user-select: none; overflow: hidden; font-family: Tahoma, "Segoe UI", sans-serif;
+           animation: lo-in .45s ease-out; }
+  #logon.leaving { animation: lo-out .6s ease-in forwards; }
+  @keyframes lo-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes lo-out { to { opacity: 0; transform: scale(1.04); } }
+  #logon .lo-xp, #logon .lo-w8 { position: absolute; inset: 0; display: none; }
+  #logon.xp .lo-xp, #logon.w8 .lo-w8 { display: block; }
+  .lo-pic { width: 58px; height: 58px; flex: none; border-radius: 6px; border: 2px solid #fff; display: grid; place-items: center;
+            font: 700 28px "Trebuchet MS", Tahoma, sans-serif; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  .lo-pic.big { width: 150px; height: 150px; font-size: 72px; border-radius: 0; border: 0; }
+
+  /* XP: dark bands top and bottom, a light-blue middle split by a glowing line */
+  .lo-xp { background: #5a7edc; color: #fff; }
+  .lo-top { position: absolute; left: 0; right: 0; top: 0; height: 12%; background: #00309c;
+            box-shadow: 0 2px 0 #7f9ff0; }
+  .lo-bot { position: absolute; left: 0; right: 0; bottom: 0; height: 13%; background: #00309c; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 4%; box-sizing: border-box; }
+  .lo-bot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+                    background: linear-gradient(90deg, #00309c, #f99736 30%, #f99736 70%, #00309c); }
+  .lo-mid { position: absolute; left: 0; right: 0; top: 12%; bottom: 13%; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(ellipse at 18% 20%, #9cb6f4 0, #6f90e2 28%, #5a7edc 60%); }
+  .lo-left { flex: 1; max-width: 430px; text-align: right; padding-right: 34px; }
+  .lo-left img { filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+  .lo-brand { font: 300 34px "Trebuchet MS", Tahoma, sans-serif; margin: 6px 0 22px; text-shadow: 1px 1px 2px #1c3c94; }
+  .lo-brand b { font-weight: 700; }
+  .lo-hint { font-size: 15px; text-shadow: 1px 1px 1px #1c3c94; }
+  .lo-div { width: 1px; align-self: stretch; margin: 6% 0; background: linear-gradient(transparent, #fff 25%, #fff 75%, transparent); }
+  .lo-right { flex: 1; max-width: 430px; padding-left: 34px; }
+  .lo-user { display: flex; align-items: center; gap: 14px; padding: 9px 40px 9px 9px; border-radius: 8px; cursor: pointer; outline: none;
+             transition: background .15s; }
+  .lo-user:hover, .lo-user:focus-visible { background: linear-gradient(90deg, #1f4cbf, rgba(31,76,191,0)); }
+  .lo-user:hover .lo-pic, .lo-user:focus-visible .lo-pic { border-color: #ffcc33; }
+  .lo-user .lo-name { font: 700 19px "Trebuchet MS", Tahoma, sans-serif; text-shadow: 1px 1px 1px #1c3c94; }
+  .lo-user .lo-sub { font-size: 12px; opacity: .85; margin-top: 3px; }
+  .lo-bot button { color: #fff; background: none; border: 0; font: 13px Tahoma, sans-serif; cursor: pointer; padding: 6px 10px; border-radius: 4px; }
+  .lo-bot button:hover { background: rgba(255,255,255,.15); }
+  .lo-tip { font-size: 12px; opacity: .8; text-align: right; max-width: 300px; }
+
+  /* 98 + 8: a lock-screen curtain with a big clock; it slides up to show the user tile */
+  .lo-w8 { background: linear-gradient(135deg, #1b2a6b, #0f6cbd 55%, #1e9ad6); color: #fff; font-family: "Segoe UI", Tahoma, sans-serif; }
+  .lo-w8.has-bg { background: center / cover no-repeat; }
+  .lo-curtain { position: absolute; inset: 0; z-index: 2; background: inherit; cursor: pointer; outline: none;
+                transition: transform .55s cubic-bezier(.6,0,.3,1); }
+  .lo-w8.up .lo-curtain { transform: translateY(-100%); }
+  .lo-clock { position: absolute; left: 6%; bottom: 12%; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+  .lo-time { font: 200 110px/1 "Segoe UI Light", "Segoe UI", sans-serif; }
+  .lo-date { font: 300 34px "Segoe UI Light", "Segoe UI", sans-serif; margin-top: 6px; }
+  .lo-up { position: absolute; left: 0; right: 0; bottom: 3%; text-align: center; font-size: 13px; opacity: .7; animation: lo-nudge 2.4s ease-in-out infinite; }
+  @keyframes lo-nudge { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-6px); } 90% { transform: translateY(-2px); } }
+  .lo-sign { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+             background: rgba(0,0,0,.25); }
+  .lo-sign .lo-pic { background: #2d89ef; }
+  .lo-sign .lo-name { font: 300 30px "Segoe UI Light", "Segoe UI", sans-serif; }
+  .lo-sign .lo-go { margin-top: 6px; padding: 7px 26px; font: 15px "Segoe UI", sans-serif; color: #fff; cursor: pointer;
+                    background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.85); }
+  .lo-sign .lo-go:hover, .lo-sign .lo-go:focus-visible { background: rgba(255,255,255,.28); outline: none; }
+  .lo-sign .lo-off { position: absolute; right: 24px; bottom: 20px; color: #fff; background: none; border: 0; font: 14px "Segoe UI", sans-serif;
+                     cursor: pointer; opacity: .8; padding: 6px 10px; }
+  .lo-sign .lo-off:hover { opacity: 1; background: rgba(255,255,255,.12); }
+
+  /* the "Logging off..." / "Welcome" message, with spinning dots */
+  .lo-msg { position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column; align-items: center; justify-content: center;
+            gap: 10px; color: #fff; }
+  #logon.busy .lo-msg { display: flex; }
+  #logon.busy .lo-mid > *, #logon.busy .lo-bot > *, #logon.busy .lo-curtain, #logon.busy .lo-sign { visibility: hidden; }   /* keep only the bands */
+  #logon.w8.busy .lo-w8 { background: #1b4fa8; }
+  .lo-big { font: 300 36px "Segoe UI Light", "Trebuchet MS", Tahoma, sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,.35); }
+  .lo-small { font-size: 14px; opacity: .85; }
+  .lo-dots { position: relative; width: 46px; height: 46px; margin-bottom: 10px; }
+  .lo-dots i { position: absolute; inset: 0; animation: lo-orbit 2.2s cubic-bezier(.5,.15,.5,.85) infinite; }
+  .lo-dots i::before { content: ""; position: absolute; left: 50%; top: 0; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #fff; }
+  .lo-dots i:nth-child(2) { animation-delay: .12s; } .lo-dots i:nth-child(3) { animation-delay: .24s; }
+  .lo-dots i:nth-child(4) { animation-delay: .36s; } .lo-dots i:nth-child(5) { animation-delay: .48s; }
+  @keyframes lo-orbit { 0% { transform: rotate(0); opacity: 1; } 75% { transform: rotate(720deg); opacity: 1; } 76%, 100% { transform: rotate(720deg); opacity: 0; } }
 </style>
 </head>
 <body>
@@ -834,6 +949,8 @@
       </div>
       <div class="sm-right">
         <ul>
+          <li id="xpVault">🔐 Password Vault</li>
+          <li class="xsep"></li>
           <li id="xpAdd">➕ Add shortcut…</li>
           <li id="xpAddCat">📁 Add category…</li>
           <li id="xpAddCmd">📋 Add command…</li>
@@ -844,6 +961,7 @@
           <li id="xpNet"><span id="xpNetChk" class="chk"></span>📶 Network monitor</li>
           <li id="xpSnd"><span id="xpSndChk" class="chk"></span>🔔 Sound alerts</li>
           <li id="xpSndTest">🎵 Alert sounds…</li>
+          <li id="xpAutoOff"><span id="xpAutoOffChk" class="chk"></span>⏲️ Auto log off (5 min)</li>
           <li class="xsep"></li>
           <li id="xpUpdate">⬆️ Check for updates…</li>
           <li id="xpBackup">💾 Backup (ZIP)…</li>
@@ -856,6 +974,7 @@
     </div>
     <div class="sm-foot">
       <button id="xpModern">🪟 Windows 98 + 8 theme</button>
+      <button id="xpLogoff" title="Log off to the welcome screen (no password needed to come back)">🔑 Log Off</button>
       <button id="xpOff" title="Shut down Tools Manager">⏻ Shut Down…</button>
     </div>
   </div>
@@ -865,6 +984,42 @@
   </div>
 </div>
 <div id="toast"></div>
+
+<!-- log off: a welcome / lock screen over the whole app (no password: click your name to come back) -->
+<div id="logon" hidden>
+  <div class="lo-xp">
+    <div class="lo-top"></div>
+    <div class="lo-mid">
+      <div class="lo-left">
+        <img src="/favicon.svg" alt="" width="72" height="72">
+        <div class="lo-brand">Tools <b>Manager</b></div>
+        <div class="lo-hint">To begin, click your user name</div>
+      </div>
+      <div class="lo-div"></div>
+      <div class="lo-right">
+        <div class="lo-user" tabindex="0" title="Click to log on (right-click to change the name)">
+          <div class="lo-pic"></div>
+          <div><div class="lo-name"></div><div class="lo-sub">Click to log on</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="lo-bot"><button type="button" class="lo-off">⏻ Shut Down Tools Manager</button>
+      <span class="lo-tip">After you log on, your tools, notes and windows are just as you left them.</span></div>
+  </div>
+  <div class="lo-w8">
+    <div class="lo-curtain" tabindex="0">
+      <div class="lo-clock"><div class="lo-time"></div><div class="lo-date"></div></div>
+      <div class="lo-up">Click or press any key</div>
+    </div>
+    <div class="lo-sign">
+      <div class="lo-pic big"></div>
+      <div class="lo-name"></div>
+      <button type="button" class="lo-go">Sign in  ➜</button>
+      <button type="button" class="lo-off">⏻ Shut Down</button>
+    </div>
+  </div>
+  <div class="lo-msg"><div class="lo-dots"><i></i><i></i><i></i><i></i><i></i></div><div class="lo-big"></div><div class="lo-small"></div></div>
+</div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -999,6 +1154,8 @@ const deskRows = () => Math.max(1, Math.floor((deskBox().clientHeight - PAD) / R
 // nearest free grid cell, scanning down each column from the wanted cell
 function freeCell(col, row, ignoreId) {
   const used = new Set(shortcuts.filter(s => s.desktop && s.id !== ignoreId).map(s => s.dx + ',' + s.dy));
+  const vi = vaultIconPos();
+  if (vi.on && vi.dx != null && ignoreId !== VAULT_DESK) used.add(vi.dx + ',' + vi.dy);   // the vault's key icon takes a cell too
   const rows = deskRows();
   for (let i = col * rows + row, n = 0; n < 5000; i++, n++) {
     const c = Math.floor(i / rows), r = i % rows;
@@ -1025,6 +1182,7 @@ const deskCtx = () => [
   { label: 'New note…', fn: () => { const i = deskBox().parentElement.querySelector('.nb-new'); i.hidden = false; i.focus(); } },
   { label: (document.body.classList.contains('editing') ? '✓ ' : '') + 'Edit mode', fn: toggleEdit },
   { label: (netOn ? '✓ ' : '') + 'Network monitor', fn: toggleNet },
+  vaultIconPos().on ? { label: 'Open Password Vault', fn: openVault } : { label: 'Show Password Vault icon', fn: () => setVaultIcon(true) },
   null,
   { label: `Switch to ${otherTheme()[1]} theme`, fn: () => setTheme(otherTheme()[0]) },
 ];
@@ -1048,6 +1206,38 @@ function deskIcon(s) {
   return d;
 }
 
+// the Password Vault's own desktop icon (a key); not a shortcut, so its place is kept in this window's settings
+const VAULT_DESK = '__vault__';
+const vaultIconPos = () => { const v = store.get('vaultIcon', null); return v && typeof v === 'object' ? v : { on: true, dx: null, dy: null }; };
+function setVaultIcon(on, dx, dy) {
+  const v = vaultIconPos();
+  store.set('vaultIcon', { on, dx: dx ?? (on ? v.dx : null), dy: dy ?? (on ? v.dy : null) });
+  renderDesktop();
+}
+const vaultIconCtx = () => vaultIconPos().on
+  ? [{ label: 'Open', fn: openVault }, { label: 'Remove from desktop', fn: () => setVaultIcon(false) }]
+  : [{ label: 'Open', fn: openVault }, { label: 'Add to desktop', fn: () => setVaultIcon(true) }];
+function vaultDeskIcon(v) {
+  const d = document.createElement('div');
+  d.className = 'dicon';
+  d.style.left = (PAD + v.dx * COLW) + 'px';
+  d.style.top = (PAD + v.dy * ROWH) + 'px';
+  d.title = 'Password Vault: your passwords, encrypted with a master password';
+  const icon = document.createElement('div');
+  icon.className = 'icon letter vault-key'; icon.textContent = '🔑';
+  const dn = document.createElement('div'); dn.className = 'dn'; dn.textContent = 'Password Vault';
+  d.append(icon, dn);
+  d.onclick = e => {
+    e.stopPropagation();
+    d.parentElement.querySelectorAll('.dicon.sel').forEach(x => x.classList.remove('sel'));
+    d.classList.add('sel');
+  };
+  d.ondblclick = openVault;
+  d._ctx = vaultIconCtx();
+  dragSource(d, { id: VAULT_DESK, name: 'Password Vault' });
+  return d;
+}
+
 function renderDesktop() {
   $('#deskXp').textContent = ''; $('#deskW8').textContent = '';
   if (!isXp() && !isW8()) return;
@@ -1061,9 +1251,18 @@ function renderDesktop() {
     const r = box.getBoundingClientRect();
     const col = Math.max(0, Math.floor((e.clientX - r.left - PAD / 2) / COLW));
     const row = Math.min(deskRows() - 1, Math.max(0, Math.floor((e.clientY - r.top - PAD / 2) / ROWH)));
-    placeOnDesktop(dragId, col, row);
+    if (dragId === VAULT_DESK) { const [dx, dy] = freeCell(col, row, VAULT_DESK); setVaultIcon(true, dx, dy); }
+    else placeOnDesktop(dragId, col, row);
   };
   for (const s of shortcuts) if (s.desktop) box.append(deskIcon(s));
+  const vi = vaultIconPos();
+  if (vi.on) {
+    if (vi.dx == null || vi.dy == null) {                     // first time: the first free cell from the top left
+      [vi.dx, vi.dy] = freeCell(0, 0, VAULT_DESK);
+      store.set('vaultIcon', vi);
+    }
+    box.append(vaultDeskIcon(vi));
+  }
 }
 
 function render() {
@@ -1379,6 +1578,7 @@ function dropTarget(el, cat) {
     if (!dragId) return;
     e.preventDefault(); e.stopPropagation();
     el.classList.remove('drop');
+    if (dragId === VAULT_DESK) return;                         // the vault icon is not a shortcut: it has no category
     moveTo(dragId, cat);
   });
 }
@@ -1465,7 +1665,7 @@ function toggleEdit() {
   renderW8();
 }
 document.addEventListener('keydown', e => {
-  if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !$('#dlg').open) {
+  if (e.key === '/' && !loggedOff && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !$('#dlg').open) {
     e.preventDefault();
     if (isXp()) { if (!startOpen()) openStart(); $('#xpSearch').focus(); }
     else { if (!w8Open()) openW8(); $('#w8Find').focus(); }
@@ -1558,7 +1758,7 @@ restoreInput.onchange = async () => {
   const f = restoreInput.files[0];
   if (!f) return;
   if (!await ask({ title: 'Restore backup', ok: 'Restore',
-                   message: `Restore "${f.name}"? This REPLACES all your current categories, shortcuts and icons. Only restore backups you trust.` })) return;
+                   message: `Restore "${f.name}"? This REPLACES all your current categories, shortcuts and icons. If the backup has a password vault, it replaces your vault too (it then opens with the master password it was saved with). Only restore backups you trust.` })) return;
   try {
     const r = await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: f });
     const d = await r.json().catch(() => ({}));
@@ -1567,13 +1767,14 @@ restoreInput.onchange = async () => {
     if (d.background) await loadBackground();
     await loadNotes();
     await loadSoundInfo();
-    toast(`Restored ${d.shortcuts} shortcuts and ${d.categories} categories`);
+    if (d.vault) closeVault();                                     // the open copy is out of date: unlock the restored one
+    toast(`Restored ${d.shortcuts} shortcuts and ${d.categories} categories` + (d.vault ? ' and the password vault' : ''));
   } catch (e) { toast(e.message, true); }
 };
 
 async function factoryReset() {
   const typed = await ask({ title: 'Factory reset', input: true, ok: 'Erase everything',
-    message: 'This permanently deletes ALL categories, shortcuts, desktop icons and saved icons, and clears saved settings. Back up first if unsure. Type RESET to confirm:' });
+    message: 'This permanently deletes ALL categories, shortcuts, desktop icons and saved icons, the password vault, and clears saved settings. Back up first if unsure. Type RESET to confirm:' });
   if (typed === null) return;
   if (typed !== 'RESET') return toast('Nothing was changed. You must type RESET exactly.', true);
   try {
@@ -1604,6 +1805,7 @@ function setTheme(t) {
   closeStart(); closeW8();
   closeAllNoteWins();                                           // windows live in the theme's own layer
   closeNetWin();
+  if (typeof closeVault === 'function') closeVault();           // and the vault locks when its window closes
   if (t === 'xp') showBalloon();
   render();
   tickDeskClock.s = null; renderCalNext.sig = null;               // the other theme's copies are out of date: redraw them
@@ -1774,6 +1976,8 @@ $('#xpSearch').addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (e.target.value) { e.target.value = ''; renderXp(); } else closeStart(); }
   if (e.key === 'Enter') { const first = $('#xpMain .xi'); if (first) first.click(); }
 });
+$('#xpVault').onclick = () => { closeStart(); openVault(); };
+$('#xpVault').addEventListener('contextmenu', () => { $('#xpVault')._ctx = vaultIconCtx(); }, true);   // fresh "Add/Remove" label
 $('#xpAdd').onclick = () => { closeStart(); openDialog(null); };
 $('#xpAddCat').onclick = () => { closeStart(); addCat(); };
 $('#xpAddCmd').onclick = () => { closeStart(); openCmdDialog(); };
@@ -1781,6 +1985,8 @@ $('#xpStarterCmd').onclick = () => { closeStart(); loadStarterCommands(); };
 $('#xpEdit').onclick = toggleEdit;
 $('#xpModern').onclick = () => setTheme('w8');
 $('#xpOff').onclick = () => { closeStart(); powerOff(); };
+$('#xpLogoff').onclick = () => { closeStart(); logOff(); };
+$('#xpAutoOff').onclick = toggleAutoLogoff;
 $('#xpCoffee').onclick = () => { closeStart(); showDonate(); };
 $('#xpBg').onclick = () => { closeStart(); chooseBackground(); };
 $('#xpBgReset').onclick = () => { closeStart(); resetBackground(); };
@@ -1984,6 +2190,8 @@ function renderW8() {
     mi((netOn ? '✓ ' : '') + 'Network monitor', { icon: '📶', onClick: toggleNet, keep: true }),
     mi((netSoundOn ? '✓ ' : '') + 'Sound alerts', { icon: '🔔', onClick: toggleSound, keep: true }),
     mi('Alert sounds…', { icon: '🎵', onClick: openSoundDialog }),
+    mi((autoLogoff ? '✓ ' : '') + `Auto log off (${LOGOFF_IDLE_MIN} min)`, { icon: '⏲️', onClick: toggleAutoLogoff, keep: true,
+       title: `Go to the welcome screen after ${LOGOFF_IDLE_MIN} minutes without using Tools Manager` }),
     sepItem(),
     mi('Check for updates…', { icon: '⬆️', onClick: openUpdateDialog }),
     mi('Backup (download ZIP)…', { icon: '💾', onClick: backupDownload }),
@@ -1996,6 +2204,7 @@ function renderW8() {
     mi('Programs', { icon: '📂', sub: programs }),
     mi('Favorites', used.length ? { icon: '⭐', sub: favorites } : { icon: '⭐', disabled: true, title: 'Shortcuts you launch show up here' }),
     mi('Commands', { icon: '📋', sub: commandsMenu(), title: 'Click a command to copy it' }),
+    withCtx(vaultIconCtx(), mi('Password Vault', { icon: '🔐', onClick: openVault, title: 'Your passwords, encrypted with a master password' })),
     sepItem(),
     mi('Add shortcut…', { icon: '➕', onClick: () => openDialog(null) }),
     mi('Add category…', { icon: '🗂️', onClick: addCat }),
@@ -2005,6 +2214,7 @@ function renderW8() {
     mi('Settings', { icon: '⚙️', sub: settings }),
     mi('Buy me a coffee', { icon: '☕', onClick: showDonate }),
     sepItem(),
+    mi(`Log Off ${userName}…`, { icon: '🔑', onClick: () => logOff(), title: 'Go to the welcome screen. No password is needed to come back.' }),
     mi('Shut Down…', { icon: '⏻', onClick: powerOff }));
   menu.append(banner, top);
 }
@@ -3151,6 +3361,522 @@ function paintNoteWin(w, n) {
   }
   if (grew) logs.scrollTop = logs.scrollHeight;                  // newest line in view
 }
+
+/* ---------------- password vault ----------------
+   Everything is encrypted HERE, in the browser, with your master password (PBKDF2-SHA256, 600 000 rounds -> AES-256-GCM)
+   before it is sent to the server, which only stores the scrambled result in data\vault.json. The key lives in this page's
+   memory only while the vault is unlocked. Nothing (not this app, not a backup) can open the vault without the master password. */
+const VAULT_ITER = 600000, VAULT_IDLE_MIN = 5, VAULT_CLIP_SECS = 30, VAULT_MIN_PW = 10;
+const VAULT_AAD = new TextEncoder().encode('tools-manager-vault-v1');
+const VAULT_LIMITS = { name: 200, username: 500, password: 1000, url: 2000, category: 60, notes: 10000 };
+const vault = { win: null, key: null, salt: null, iter: VAULT_ITER, rev: 0, entries: [], sel: null, draft: null, dirty: false, idle: 0 };
+
+const b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function vaultDeriveKey(pw, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, base,
+                                 { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);   // the key cannot be read back out
+}
+const vaultClean = e => {
+  const s = k => String((e && e[k]) ?? '').slice(0, VAULT_LIMITS[k] || 40);
+  return { id: e && typeof e.id === 'string' && e.id ? e.id.slice(0, 40) : newId(), name: s('name'), username: s('username'),
+           password: s('password'), url: s('url'), category: s('category').trim(), notes: s('notes'), created: s('created'), updated: s('updated') };
+};
+async function vaultDecrypt(blob, key) {                // throws if the password is wrong (AES-GCM checks the data is intact)
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(blob.iv), additionalData: VAULT_AAD }, key, unb64(blob.data));
+  const d = JSON.parse(new TextDecoder().decode(plain));
+  return (Array.isArray(d.entries) ? d.entries : []).map(vaultClean);
+}
+// encrypt the whole list with a fresh IV and save it; vault.entries changes only once the server has it
+async function vaultWrite(entries, key = vault.key, salt = vault.salt, iter = vault.iter) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: VAULT_AAD }, key,
+                                                          new TextEncoder().encode(JSON.stringify({ entries }))));
+  const r = await api('PUT', '/api/vault', { v: 1, kdf: 'PBKDF2-SHA256', cipher: 'AES-GCM', iter, salt: b64(salt), iv: b64(iv),
+                                             data: b64(data), base: vault.rev });
+  Object.assign(vault, { rev: r.rev, entries, key, salt, iter });
+}
+
+function vaultGenerate(len = 20) {                        // unbiased picks from crypto.getRandomValues, at least one of each kind
+  const sets = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '!@#$%^&*-_=+?'], all = sets.join('');
+  const pick = () => { const lim = 256 - 256 % all.length; let b; do { b = crypto.getRandomValues(new Uint8Array(1))[0]; } while (b >= lim); return all[b % all.length]; };
+  for (;;) { const p = Array.from({ length: len }, pick).join(''); if (sets.every(s => [...p].some(c => s.includes(c)))) return p; }
+}
+
+async function vaultCopy(text, what) {
+  const What = what[0].toUpperCase() + what.slice(1);
+  if (!text) return toast(`There is no ${what} to copy`, true);
+  bumpVaultIdle();
+  try {                                                   // the server copies it, kept out of clipboard history (Win+V) and cloud sync
+    await api('POST', '/api/vault/copy', { text, clear: VAULT_CLIP_SECS });
+    toast(`${What} copied. The clipboard clears in ${VAULT_CLIP_SECS} seconds.`);
+  } catch (e) {
+    try { await navigator.clipboard.writeText(text); toast(`${What} copied (it may show in clipboard history)`); }
+    catch { toast('Could not copy: ' + e.message, true); }
+  }
+}
+function vaultOpenUrl(raw) {
+  let u = (raw || '').trim();
+  if (!u) return toast('There is no URL to open', true);
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = 'https://' + u;
+  let p; try { p = new URL(u); } catch { return toast('That URL is not valid', true); }
+  if (!['http:', 'https:'].includes(p.protocol)) return toast('Only http and https links can be opened', true);
+  window.open(p.href, '_blank', 'noopener,noreferrer');
+}
+
+// Auto-lock: compare the real clock with the last click/key in the vault, so time spent asleep or minimized counts
+// too (plain timers pause while Windows sleeps and are slowed down in background windows).
+let vaultLastUse = 0;
+function bumpVaultIdle() {
+  vaultLastUse = Date.now();
+  clearTimeout(vault.idle);
+  if (vault.key) vault.idle = setTimeout(checkVaultIdle, VAULT_IDLE_MIN * 60000 + 50);
+}
+function checkVaultIdle() {
+  if (!vault.key) return;
+  const left = VAULT_IDLE_MIN * 60000 - (Date.now() - vaultLastUse);
+  if (left > 0) { clearTimeout(vault.idle); vault.idle = setTimeout(checkVaultIdle, left + 50); return; }
+  lockVault(`Locked after ${VAULT_IDLE_MIN} minutes without use.` + (vault.dirty ? ' Unsaved changes were discarded.' : ''));
+}
+setInterval(checkVaultIdle, 15000);
+document.addEventListener('visibilitychange', checkVaultIdle);   // back from minimized / the PC waking up
+addEventListener('focus', checkVaultIdle);
+function lockVault(msg = '') {
+  const wasOpen = !!vault.key;
+  clearTimeout(vault.idle);
+  Object.assign(vault, { key: null, salt: null, rev: 0, entries: [], sel: null, draft: null, dirty: false });
+  if (wasOpen) api('POST', '/api/vault/clear-clipboard', {}).catch(() => {});   // a copied password does not outlive the unlock
+  if (vault.win) vaultGate(msg);
+}
+function closeVault() {
+  const w = vault.win;
+  vault.win = null;
+  lockVault();
+  if (w) w.remove();
+}
+async function vaultConfirmDiscard() {
+  return !vault.dirty || !!await ask({ title: 'Unsaved changes', message: 'This entry has changes that are not saved. Discard them?', ok: 'Discard' });
+}
+
+function openVault() {
+  if (vault.win) { focusWin(vault.win); bumpVaultIdle(); return; }
+  const w = el('div', 'nwin vaultwin');
+  w.style.left = Math.max(10, (innerWidth - 720) / 2) + 'px'; w.style.top = '24px';
+  w.innerHTML = `<div class="nw-bar"><span>🔐</span><span class="nw-name">Password Vault</span><button type="button" class="nw-x" title="Close and lock">✕</button></div><div class="nw-body"></div>`;
+  noteLayer().append(w); focusWin(w);
+  vault.win = w;
+  w.addEventListener('mousedown', () => { focusWin(w); bumpVaultIdle(); });
+  w.addEventListener('keydown', bumpVaultIdle);
+  w.addEventListener('wheel', bumpVaultIdle, { passive: true });   // scrolling the list counts as use too
+  w.querySelector('.nw-x').onclick = async () => { if (await vaultConfirmDiscard()) closeVault(); };
+  const bar = w.querySelector('.nw-bar');
+  bar.addEventListener('mousedown', e => {                       // drag by the title bar
+    if (e.target.closest('button')) return;
+    const r = w.getBoundingClientRect(), lr = noteLayer().getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    const move = ev => { w.style.left = Math.max(0, Math.min(lr.width - 60, ev.clientX - dx - lr.left)) + 'px'; w.style.top = Math.max(0, Math.min(lr.height - 30, ev.clientY - dy - lr.top)) + 'px'; };
+    const up = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', move); addEventListener('mouseup', up); e.preventDefault();
+  });
+  vaultGate();
+}
+const vaultBody = () => vault.win.querySelector('.nw-body');
+
+// locked / first run: ask for the master password (or let you choose one)
+async function vaultGate(msg = '') {
+  if (!vault.win) return;
+  const turn = vaultGate.turn = (vaultGate.turn || 0) + 1;      // only the newest call draws (lock can be clicked twice quickly)
+  vaultBody().textContent = '';
+  let info, failed = null;
+  try { info = await api('GET', '/api/vault'); } catch (e) { failed = e; }
+  if (!vault.win || vault.key || turn !== vaultGate.turn) return;
+  const body = vaultBody();
+  if (failed) {
+    const e = failed, g = el('div', 'vw-gate');
+    g.append(el('h3', '', '⚠ The vault cannot be opened'), el('p', 'vw-err', e.message));
+    const acts = el('div', 'vw-acts'), del = el('button', '', 'Delete vault…'); del.type = 'button'; del.onclick = vaultForgot;
+    acts.append(el('span'), del); g.append(acts); body.append(g);
+    return;
+  }
+  if (!info.exists) return vaultSetupForm(body);
+
+  const g = el('div', 'vw-gate');
+  g.innerHTML = `<h3>🔒 The vault is locked</h3><p>Type your master password to open it.</p>
+    <input class="vw-mp vw-secret" placeholder="Master password" autocomplete="off" spellcheck="false">
+    <div class="vw-err"></div>
+    <div class="vw-acts"><button type="button" class="vw-link vw-forgot">Forgot the master password?</button><button type="button" class="vw-go">Unlock</button></div>`;
+  body.append(g);
+  const mp = g.querySelector('.vw-mp'), err = g.querySelector('.vw-err'), go = g.querySelector('.vw-go');
+  err.textContent = msg; err.style.color = msg ? '#555' : '';
+  const unlock = async () => {
+    if (!mp.value || go.disabled) return;
+    go.disabled = true; err.style.color = '#555'; err.textContent = 'Unlocking…';
+    try {
+      const fresh = await api('GET', '/api/vault');            // always the newest copy
+      if (!fresh.exists) return vaultGate();
+      const salt = unb64(fresh.salt), key = await vaultDeriveKey(mp.value, salt, fresh.iter);
+      let entries;
+      try { entries = await vaultDecrypt(fresh, key); } catch { throw new Error('Wrong master password. Try again.'); }
+      mp.value = '';
+      Object.assign(vault, { key, salt, iter: fresh.iter, rev: fresh.rev, entries, sel: null, draft: null, dirty: false });
+      bumpVaultIdle();
+      vaultMain();
+    } catch (e) { err.style.color = ''; err.textContent = e.message; go.disabled = false; mp.select(); }
+  };
+  go.onclick = unlock;
+  mp.onkeydown = e => { if (e.key === 'Enter') unlock(); };
+  g.querySelector('.vw-forgot').onclick = vaultForgot;
+  mp.focus();
+}
+
+// first run, and "change master password": pick a new master password (typed twice)
+function vaultPasswordForm(body, { title, intro, needOld, okLabel, onCancel, onOk }) {
+  const g = el('div', 'vw-gate');
+  g.innerHTML = `<h3></h3><p class="vw-intro"></p>
+    <div class="vw-warn"><b>Do not forget it.</b> Nobody can recover the master password, and without it the vault cannot be opened, not even from a backup.</div>
+    ${needOld ? '<input class="vw-old vw-secret" placeholder="Current master password" autocomplete="off" spellcheck="false">' : ''}
+    <input class="vw-mp vw-secret" placeholder="New master password (at least ${VAULT_MIN_PW} characters)" autocomplete="off" spellcheck="false">
+    <input class="vw-mp2 vw-secret" placeholder="Type the new master password again" autocomplete="off" spellcheck="false">
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="vw-show" style="flex:none;width:auto"> Show what I type</label>
+    <div class="vw-err"></div>
+    <div class="vw-acts"><span>${onCancel ? '<button type="button" class="vw-cancel">Cancel</button>' : ''}</span><button type="button" class="vw-go"></button></div>`;
+  g.querySelector('h3').textContent = title;
+  g.querySelector('.vw-intro').textContent = intro;
+  g.querySelector('.vw-go').textContent = okLabel;
+  body.append(g);
+  const q = s => g.querySelector(s), err = q('.vw-err'), go = q('.vw-go'), boxes = [...g.querySelectorAll('.vw-secret')];
+  q('.vw-show').onchange = e => boxes.forEach(b => b.classList.toggle('show', e.target.checked));
+  if (onCancel) q('.vw-cancel').onclick = onCancel;
+  const submit = async () => {
+    if (go.disabled) return;
+    const pw = q('.vw-mp').value, pw2 = q('.vw-mp2').value;
+    if (pw.length < VAULT_MIN_PW) { err.textContent = `The master password must be at least ${VAULT_MIN_PW} characters. A short sentence is easy to remember and hard to guess.`; return q('.vw-mp').focus(); }
+    if (pw !== pw2) { err.textContent = 'The two new passwords are not the same.'; return q('.vw-mp2').select(); }
+    go.disabled = true; err.style.color = '#555'; err.textContent = 'Encrypting…';
+    try { await onOk(pw, needOld ? q('.vw-old').value : ''); boxes.forEach(b => b.value = ''); }
+    catch (e) { err.style.color = ''; err.textContent = e.message; go.disabled = false; }
+  };
+  go.onclick = submit;
+  boxes.forEach(b => b.onkeydown = e => { if (e.key === 'Enter') submit(); });
+  boxes[0].focus();
+}
+
+function vaultSetupForm(body) {
+  vaultPasswordForm(body, {
+    title: '🔐 Create your password vault', okLabel: 'Create vault',
+    intro: 'Choose a master password. It encrypts every entry on this PC before anything is saved.',
+    onOk: async pw => {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      vault.rev = 0;
+      await vaultWrite([], await vaultDeriveKey(pw, salt, VAULT_ITER), salt, VAULT_ITER);
+      Object.assign(vault, { sel: null, draft: null, dirty: false });
+      bumpVaultIdle();
+      vaultMain();
+      toast('Your vault is ready');
+    },
+  });
+}
+
+async function vaultChangePw() {
+  if (!await vaultConfirmDiscard()) return;
+  Object.assign(vault, { sel: null, draft: null, dirty: false });
+  const body = vaultBody();
+  body.textContent = '';
+  vaultPasswordForm(body, {
+    title: '🔑 Change the master password', okLabel: 'Change password', needOld: true, onCancel: vaultMain,
+    intro: 'Every entry is encrypted again with the new master password. Backups made before now still open with the old one.',
+    onOk: async (pw, old) => {
+      const cur = await api('GET', '/api/vault');
+      try { await vaultDecrypt(cur, await vaultDeriveKey(old, unb64(cur.salt), cur.iter)); }
+      catch { throw new Error('The current master password is not right.'); }
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      await vaultWrite(vault.entries, await vaultDeriveKey(pw, salt, VAULT_ITER), salt, VAULT_ITER);
+      vaultMain();
+      toast('Master password changed');
+    },
+  });
+}
+
+async function vaultForgot() {
+  const typed = await ask({ title: 'Delete the vault', input: true, ok: 'Delete vault',
+    message: 'Without the master password the vault cannot be opened by anyone. You can delete it and start again with an empty one: every password in it is lost. (A backup ZIP made earlier still holds the old copy, which opens with the old master password.) Type DELETE to confirm:' });
+  if (typed === null) return;
+  if (typed !== 'DELETE') return toast('Nothing was changed. You must type DELETE exactly.', true);
+  try { await api('DELETE', '/api/vault'); lockVault(); toast('The vault was deleted'); } catch (e) { toast(e.message, true); }
+}
+
+// unlocked: search + list on the left, the chosen entry on the right
+function vaultMain() {
+  if (!vault.win || !vault.key) return;
+  const body = vaultBody();
+  body.innerHTML = `
+    <div class="vw-tool"><input class="vw-q" placeholder="Search name, username, URL, category or notes…" autocomplete="off" spellcheck="false">
+      <button type="button" class="vw-new">＋ New entry</button><button type="button" class="vw-chpw" title="Change the master password">🔑 Master password</button><button type="button" class="vw-lock" title="Lock the vault now">🔒 Lock</button></div>
+    <div class="vw-split"><div class="vw-list"></div><div class="vw-detail"></div></div>
+    <div class="vw-hint">Locks after ${VAULT_IDLE_MIN} minutes without use and when you close this window. Copied values are kept out of clipboard history and cleared after ${VAULT_CLIP_SECS} seconds. Double-click an entry to copy its password.</div>`;
+  const q = s => body.querySelector(s), search = q('.vw-q');
+  search.oninput = vaultPaintList;
+  search.onkeydown = e => {
+    if (e.key === 'Escape' && search.value) { search.value = ''; vaultPaintList(); }
+    if (e.key === 'Enter') { const first = body.querySelector('.vw-item'); if (first) first.click(); }
+  };
+  q('.vw-new').onclick = () => vaultSelect(null);
+  q('.vw-chpw').onclick = vaultChangePw;
+  q('.vw-lock').onclick = async () => { if (await vaultConfirmDiscard()) lockVault(); };
+  vaultPaintList();
+  vaultPaintDetail();
+  search.focus();
+}
+
+function vaultPaintList() {
+  if (!vault.win || !vault.key) return;
+  const list = vaultBody().querySelector('.vw-list'), search = vaultBody().querySelector('.vw-q');
+  if (!list) return;
+  const terms = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = vault.entries.filter(e => {
+    const hay = [e.name, e.username, e.url, e.category, e.notes].join(' ').toLowerCase();   // never the password
+    return terms.every(t => hay.includes(t));
+  }).sort((a, b) => (a.category || '￿').localeCompare(b.category || '￿') || a.name.localeCompare(b.name));
+  list.textContent = '';
+  if (!vault.entries.length) { list.append(el('div', 'vw-empty', 'Your vault is empty.\nClick “＋ New entry” to add your first password.')); return; }
+  if (!hits.length) { list.append(el('div', 'vw-empty', 'No entries match your search.')); return; }
+  let cat = null;
+  for (const e of hits) {
+    if (e.category !== cat) { cat = e.category; list.append(el('div', 'vw-cat', cat || 'No category')); }
+    const row = el('div', 'vw-item' + (e.id === vault.sel ? ' sel' : ''));
+    row.append(el('span', 'vw-n', e.name || '(no name)'), el('span', 'vw-u', e.username || e.url || ' '));
+    row.title = [e.username && 'User: ' + e.username, e.url].filter(Boolean).join('\n');
+    row.onclick = () => { if (vault.sel !== e.id) vaultSelect(e.id); };
+    row.ondblclick = () => vaultCopy(e.password, 'password');
+    withCtx([
+      { label: 'Copy username', fn: () => vaultCopy(e.username, 'username') },
+      { label: 'Copy password', fn: () => vaultCopy(e.password, 'password') },
+      { label: 'Open URL', fn: () => vaultOpenUrl(e.url) },
+      null,
+      { label: 'Delete…', fn: () => vaultDelete(e.id), danger: true },
+    ], row);
+    list.append(row);
+  }
+  const sel = list.querySelector('.vw-item.sel');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+}
+
+async function vaultSelect(id) {
+  if (!await vaultConfirmDiscard()) return;
+  if (id === null) {
+    vault.sel = null;
+    vault.draft = vaultClean({ id: newId() });
+  } else {
+    const e = vault.entries.find(x => x.id === id);
+    if (!e) return;
+    vault.sel = id; vault.draft = { ...e };
+  }
+  vault.dirty = false;
+  vaultPaintList();
+  vaultPaintDetail();
+}
+
+function vaultPaintDetail() {
+  if (!vault.win || !vault.key) return;
+  const box = vaultBody().querySelector('.vw-detail');
+  if (!box) return;
+  box.textContent = '';
+  const d = vault.draft;
+  if (!d) {
+    const n = vault.entries.length;
+    box.append(el('div', 'vw-empty', n ? `${n} entr${n === 1 ? 'y' : 'ies'} in your vault.\nPick one on the left, or click “＋ New entry”.`
+                                       : 'Click “＋ New entry” to add a password.'));
+    return;
+  }
+  const isNew = !vault.entries.some(x => x.id === d.id);
+  box.innerHTML = `
+    <div class="nw-row"><span>Name</span><input class="f-name" placeholder="e.g. Core switch admin" autocomplete="off" spellcheck="false"></div>
+    <div class="nw-row"><span>Username</span><input class="f-username" autocomplete="off" spellcheck="false"><button type="button" class="c-user" title="Copy the username">Copy</button></div>
+    <div class="nw-row"><span>Password</span><input class="f-password vw-pw vw-secret" autocomplete="off" spellcheck="false"><button type="button" class="t-pass" title="Show or hide the password">👁</button><button type="button" class="g-pass" title="Make a strong random password (20 characters)">Generate</button><button type="button" class="c-pass" title="Copy the password">Copy</button></div>
+    <div class="nw-row"><span>URL</span><input class="f-url" placeholder="https://…" autocomplete="off" spellcheck="false"><button type="button" class="o-url" title="Open this address">Open</button><button type="button" class="c-url" title="Copy the URL">Copy</button></div>
+    <div class="nw-row"><span>Category</span><span class="combo"><input class="f-category" placeholder="Pick one or type a new one" autocomplete="off" spellcheck="false"><button type="button" class="combo-btn f-catbtn" tabindex="-1" aria-label="Show categories">▼</button><div class="combo-list f-catlist" hidden></div></span></div>
+    <div class="nw-row" style="align-items:stretch;flex:1"><span style="padding-top:4px">Notes</span><textarea class="f-notes" spellcheck="false" placeholder="Anything else: PIN, security questions, which servers it works on…"></textarea></div>
+    <div class="vw-foot"><span class="vw-meta"></span><span class="vw-sp"></span><button type="button" class="d-del">Delete</button><button type="button" class="d-cancel">Cancel</button><button type="button" class="d-save">Save</button></div>`;
+  const q = s => box.querySelector(s);
+  const meta = q('.vw-meta');
+  const paintMeta = () => {
+    meta.className = vault.dirty ? 'vw-meta vw-dirty' : 'vw-meta';
+    meta.textContent = vault.dirty ? '● Not saved yet' : isNew ? 'New entry' : (d.updated ? 'Saved ' + fmtStamp(d.updated) : '');
+  };
+  for (const k of ['name', 'username', 'password', 'url', 'category', 'notes']) {
+    const f = q('.f-' + k);
+    f.maxLength = VAULT_LIMITS[k];
+    f.value = d[k];
+    const set = () => { if (d[k] !== f.value) { d[k] = f.value; vault.dirty = true; paintMeta(); } };
+    f.addEventListener('input', set);
+    f.addEventListener('change', set);                      // a pick from the category list
+  }
+  setupCombo(q('.f-category'), q('.f-catlist'), q('.f-catbtn'),
+             () => [...new Set(vault.entries.map(e => e.category).filter(Boolean))].sort().map(c => ({ v: c, l: c })));
+  const pw = q('.f-password');
+  q('.t-pass').onclick = () => pw.classList.toggle('show');
+  q('.g-pass').onclick = () => { pw.value = vaultGenerate(); pw.classList.add('show'); pw.dispatchEvent(new Event('input')); };
+  q('.c-user').onclick = () => vaultCopy(q('.f-username').value, 'username');
+  q('.c-pass').onclick = () => vaultCopy(pw.value, 'password');
+  q('.c-url').onclick = () => vaultCopy(q('.f-url').value.trim(), 'URL');
+  q('.o-url').onclick = () => vaultOpenUrl(q('.f-url').value);
+  q('.d-del').hidden = isNew;
+  q('.d-del').onclick = () => vaultDelete(d.id);
+  q('.d-cancel').onclick = async () => {
+    if (!await vaultConfirmDiscard()) return;
+    vault.dirty = false;
+    if (isNew) { vault.draft = null; vault.sel = null; } else vault.draft = { ...vault.entries.find(x => x.id === d.id) };
+    vaultPaintList(); vaultPaintDetail();
+  };
+  q('.d-save').onclick = vaultSaveDraft;
+  box.onkeydown = e => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); vaultSaveDraft(); } };
+  paintMeta();
+  if (isNew) q('.f-name').focus();
+}
+
+async function vaultSaveDraft() {
+  const d = vault.draft;
+  if (!d || !vault.key) return;
+  const box = vaultBody().querySelector('.vw-detail'), save = box.querySelector('.d-save');
+  if (!d.name.trim()) { toast('Please give the entry a name', true); return box.querySelector('.f-name').focus(); }
+  const now = new Date().toISOString();
+  const entry = vaultClean({ ...d, name: d.name.trim(), url: d.url.trim(), category: d.category.trim(), created: d.created || now, updated: now });
+  const list = vault.entries.some(x => x.id === entry.id) ? vault.entries.map(x => x.id === entry.id ? entry : x) : [...vault.entries, entry];
+  save.disabled = true;
+  try {
+    await vaultWrite(list);
+    Object.assign(vault, { sel: entry.id, draft: { ...entry }, dirty: false });
+    vaultPaintList(); vaultPaintDetail();
+    toast('Saved');
+  } catch (e) { toast(e.message, true); save.disabled = false; }
+}
+
+async function vaultDelete(id) {
+  const e = vault.entries.find(x => x.id === id);
+  if (!e) return;
+  if (!await ask({ title: 'Delete entry', message: `Delete "${e.name}" from the vault? This cannot be undone.`, ok: 'Delete' })) return;
+  try {
+    await vaultWrite(vault.entries.filter(x => x.id !== id));
+    if (vault.draft && vault.draft.id === id) Object.assign(vault, { sel: null, draft: null, dirty: false });
+    vaultPaintList(); vaultPaintDetail();
+    toast('Deleted');
+  } catch (err) { toast(err.message, true); }
+}
+
+/* ---------------- log off: welcome screen (XP) / lock screen (98 + 8), by hand or after 5 minutes without use ----------------
+   No password: it is a privacy curtain, not a lock. Logging off does lock the Password Vault, which still needs its master password. */
+const LOGOFF_IDLE_MIN = 5;
+let autoLogoff = store.get('autoLogoff', true), userName = String(store.get('userName', 'User') || 'User').slice(0, 40);
+let loggedOff = false, logonBusy = false, lastActive = Date.now();
+const logon = $('#logon');
+const pause = ms => new Promise(r => setTimeout(r, ms));
+
+function paintLogonUser() {
+  logon.querySelectorAll('.lo-name').forEach(e => { e.textContent = userName; });
+  logon.querySelectorAll('.lo-pic').forEach(e => {
+    e.textContent = (userName.trim()[0] || '?').toUpperCase();
+    e.style.background = `linear-gradient(135deg, hsl(${hue(userName)} 60% 55%), hsl(${hue(userName)} 60% 35%))`;
+  });
+}
+function tickLogon() {
+  if (!loggedOff) return;
+  const d = new Date();
+  logon.querySelector('.lo-time').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M$/i, '');
+  logon.querySelector('.lo-date').textContent = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+}
+setInterval(tickLogon, 1000);
+
+function showLogon() {
+  logon.className = isXp() ? 'xp' : 'w8';
+  const w8 = logon.querySelector('.lo-w8'), bg = $('#w8 .userbg');
+  const pic = bg && !bg.hidden ? bg.style.backgroundImage : '';      // your own background picture, if you set one
+  w8.classList.remove('up');
+  w8.classList.toggle('has-bg', !!pic);
+  w8.style.backgroundImage = pic;
+  paintLogonUser(); tickLogon();
+  logon.hidden = false;
+}
+function logonMsg(big, small) {
+  logon.querySelector('.lo-big').textContent = big;
+  logon.querySelector('.lo-small').textContent = small;
+  logon.classList.add('busy');
+}
+
+async function logOff({ auto = false } = {}) {
+  if (loggedOff || logonBusy) return;
+  if (!auto && !await vaultConfirmDiscard()) return;
+  logonBusy = true;
+  closeStart(); closeW8(); hideCtx();
+  document.querySelectorAll('dialog[open]').forEach(d => { if (d.id !== 'remDlg') d.close(); });   // reminders may still pop up
+  closeVault();                                                   // the one real lock: the vault needs its master password again
+  loggedOff = true; store.set('loggedOff', true);
+  showLogon();
+  if (!auto) { logonMsg('Logging off…', 'Saving your settings'); await pause(1500); }
+  logon.classList.remove('busy');
+  logonBusy = false;
+  logon.querySelector(isXp() ? '.lo-user' : '.lo-curtain').focus();
+}
+
+async function logOn() {
+  if (!loggedOff || logonBusy) return;
+  logonBusy = true;
+  logonMsg('Welcome', 'Loading your personal settings…');
+  await pause(1700);
+  logon.classList.add('leaving');
+  await pause(600);
+  logon.hidden = true; logon.className = '';
+  loggedOff = false; store.set('loggedOff', false);
+  lastActive = Date.now();
+  logonBusy = false;
+}
+
+async function renameUser() {
+  const v = await ask({ title: 'Your name', message: 'The name shown on the welcome screen and in the Start menu:', input: true, value: userName, ok: 'Save' });
+  if (v === null) return;
+  userName = v.trim().slice(0, 40) || 'User';
+  store.set('userName', userName);
+  paintLogonUser(); renderW8();
+}
+
+function toggleAutoLogoff() {
+  autoLogoff = !autoLogoff; store.set('autoLogoff', autoLogoff);
+  lastActive = Date.now();
+  paintAutoOffCheck(); renderW8();
+  toast(autoLogoff ? `Tools Manager will log off after ${LOGOFF_IDLE_MIN} minutes without use` : 'Auto log off is off');
+}
+function paintAutoOffCheck() { $('#xpAutoOffChk').textContent = autoLogoff ? '✓' : ''; }
+
+// XP: click your name. 98 + 8: click (or press a key) to lift the curtain, then Sign in.
+const loUser = logon.querySelector('.lo-user'), loCurtain = logon.querySelector('.lo-curtain'), loW8 = logon.querySelector('.lo-w8');
+const liftCurtain = () => { if (logonBusy) return; loW8.classList.add('up'); setTimeout(() => logon.querySelector('.lo-go').focus(), 300); };
+loUser.onclick = logOn;
+loUser.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); logOn(); } };
+loCurtain.onclick = liftCurtain;
+loCurtain.onkeydown = e => { e.preventDefault(); liftCurtain(); };
+logon.querySelector('.lo-go').onclick = logOn;
+logon.querySelector('.lo-sign .lo-pic').onclick = logOn;
+logon.querySelector('.lo-sign').onkeydown = e => {
+  if (e.key === 'Escape') { loW8.classList.remove('up'); loCurtain.focus(); }
+};
+logon.querySelectorAll('.lo-off').forEach(b => { b.onclick = powerOff; });
+const userCtx = [{ label: 'Log on', fn: logOn }, { label: 'Change name…', fn: renameUser }];
+loUser._ctx = userCtx;
+logon.querySelector('.lo-sign')._ctx = userCtx;
+
+// "use" = a click, key, scroll or mouse movement anywhere in Tools Manager; checked against the real clock so
+// time asleep or minimized counts too
+const markActive = () => { if (!loggedOff) lastActive = Date.now(); };
+for (const t of ['mousedown', 'keydown', 'wheel', 'touchstart']) addEventListener(t, markActive, { capture: true, passive: true });
+let lastMove = 0;
+addEventListener('mousemove', () => { const n = Date.now(); if (n - lastMove > 1000) { lastMove = n; markActive(); } }, { passive: true });
+function checkAutoLogoff() {
+  if (autoLogoff && !loggedOff && !logonBusy && !shuttingDown && Date.now() - lastActive >= LOGOFF_IDLE_MIN * 60000) logOff({ auto: true });
+}
+setInterval(checkAutoLogoff, 15000);
+document.addEventListener('visibilitychange', checkAutoLogoff);
+paintAutoOffCheck();
+if (store.get('loggedOff', false)) setTimeout(() => { loggedOff = true; showLogon(); }, 0);   // a reload keeps you logged off
 
 wireNotesBoxes();
 paintNotesPos();

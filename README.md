@@ -59,6 +59,16 @@ Click **Start**, then **Shut Down**. Or just close the window.
 - **Notes**: a compact to-do list on the right of the desktop. Each note has a status shown as a small animation
   (To do, In progress, Waiting, Done), an optional **due date** you pick from a calendar, a link to one of your tools,
   and opens in its own small window with a log, so you can keep track of what you did and when.
+- **Password Vault** (Start menu): keep usernames, passwords, URLs and notes in categories, with search, a password
+  generator and one-click copy. Everything is **encrypted in the app window with your master password** (PBKDF2-SHA256,
+  600 000 rounds, then AES-256-GCM) before it is saved, so `data\vault.json` only ever holds scrambled data. Copied values
+  are kept out of Windows clipboard history (Win+V) and cloud clipboard, and are cleared after 30 seconds. The vault locks
+  after 5 minutes without use and when you close its window. **If you forget the master password, nobody can open the
+  vault**, not even from a backup.
+- **Log Off**: Start menu > *Log Off* shows a welcome screen (XP) or a lock screen with a big clock (Windows 98 + 8).
+  Click your name, or *Sign in*, to come back, with a short animation. There is no password: it is a privacy curtain,
+  not a lock. Logging off does lock the Password Vault. It also happens by itself after 5 minutes without use (turn
+  this off in *Settings > Auto log off*). Right-click your name on that screen to change it.
 - **Calendar**: a month view with **US federal holidays** (worked out on your PC, no internet), today circled, arrows to
   change month, your own **events**, note due dates as dots, a "Next: ... in 2 h" countdown, and **reminders**
   (while the app is open).
@@ -71,7 +81,7 @@ Click **Start**, then **Shut Down**. Or just close the window.
 - **Your own background**: pick a picture in *Settings > Change background...* (PNG, JPG, GIF or WEBP, up to 15 MB).
 - **Windows-style pop-up forms**: drag them by the title bar, close them with the red or grey close button.
 - **Backup / Restore / Factory reset**: export everything (shortcuts, categories, icons, commands, notes, events,
-  background and your alert sounds) to a ZIP, restore it later, or wipe it all.
+  background, your alert sounds and the still-encrypted password vault) to a ZIP, restore it later, or wipe it all.
 - **Shut Down** from the menu, or just close the window: the server stops itself.
 
 ## Updating
@@ -102,7 +112,7 @@ kept, because the starter pack does not contain any.
 
 ## Your data
 Everything you create is stored in the `data` folder next to the program (`shortcuts.json`, `categories.json`,
-`commands.json`, `notes.json`, `events.json`, `menu.json`, `outages.json`, `net-targets.json`, `background.*`,
+`commands.json`, `notes.json`, `events.json`, `menu.json`, `outages.json`, `net-targets.json`, `vault.json` (encrypted), `background.*`,
 `sounds/` and `icons/`). It stays on your PC. Back it up from the menu, or copy the folder.
 
 ## Settings (environment variables, all optional)
@@ -119,7 +129,11 @@ Everything you create is stored in the `data` folder next to the program (`short
 - The network monitor sends small ping and DNS test packets to your gateway, your DNS server and Google DNS
   (`8.8.8.8` / `8.8.4.4`), plus any hosts you add. It does this only while the app is open and the monitor is on, and you can
   switch it off in *Settings*. Nothing else is sent anywhere.
-- Do not save passwords or keys in Commands or Notes.
+- Do not save passwords or keys in Commands or Notes: they are stored as plain text. Use the **Password Vault** instead.
+- The Password Vault is encrypted in the browser; the server stores only the encrypted file and never logs it. When you
+  click **Copy**, that one value passes through the local server to reach the Windows clipboard (so it can be kept out of
+  clipboard history) and is not stored. Restoring a backup that has a vault replaces your current vault. It is a simple,
+  self-contained vault, not an audited product; for very high-value secrets, a dedicated password manager is safer.
 - **Check for updates** downloads code from this project's GitHub Releases over HTTPS, checks it, and only replaces the
   program files (never `data`). You trust the project's GitHub account when you click it.
 

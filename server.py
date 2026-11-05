@@ -1174,10 +1174,184 @@ def load_events():
         return []
 
 
+# ---------------------------------------------------------------- password vault
+# The browser encrypts the vault (PBKDF2-SHA256 -> AES-256-GCM) with your master password before it is sent here.
+# The server only ever stores and returns the scrambled blob: it never sees the master password, the key or any
+# entry, and it never logs the blob. Forget the master password and nothing here can open the vault.
+VAULT_FILE = os.path.join(DATA_DIR, "vault.json")
+MAX_VAULT_BYTES = 8 * 1024 * 1024                   # ciphertext, base64; thousands of entries fit easily
+B64_RE = re.compile(r"^[A-Za-z0-9+/]*={0,2}$")
+
+
+def _b64_len(s, lo, hi):
+    """Length in bytes of a base64 string, or ValueError if it is not one or not between lo and hi."""
+    if not isinstance(s, str) or len(s) % 4 or not B64_RE.match(s):
+        raise ValueError("The vault data is not valid")
+    n = len(s) // 4 * 3 - s[-2:].count("=")
+    if not lo <= n <= hi:
+        raise ValueError("The vault data is not valid")
+    return n
+
+
+def clean_vault(raw):
+    """Check the shape of an encrypted vault (never its contents, which the server cannot read)."""
+    if not isinstance(raw, dict) or raw.get("v") != 1 or raw.get("kdf") != "PBKDF2-SHA256" or raw.get("cipher") != "AES-GCM":
+        raise ValueError("The vault data is not valid")
+    it = raw.get("iter")
+    if not isinstance(it, int) or isinstance(it, bool) or not 100_000 <= it <= 10_000_000:
+        raise ValueError("The vault data is not valid")
+    _b64_len(raw.get("salt"), 16, 64)
+    _b64_len(raw.get("iv"), 12, 12)
+    _b64_len(raw.get("data"), 17, MAX_VAULT_BYTES)    # at least the 16-byte GCM tag
+    rev = raw.get("rev", 0)
+    if not isinstance(rev, int) or isinstance(rev, bool) or rev < 0:
+        rev = 0
+    return {"v": 1, "kdf": "PBKDF2-SHA256", "cipher": "AES-GCM", "iter": it,
+            "salt": raw["salt"], "iv": raw["iv"], "data": raw["data"], "rev": rev}
+
+
+def load_vault():
+    try:
+        with open(VAULT_FILE, encoding="utf-8") as f:
+            return clean_vault(json.load(f))
+    except FileNotFoundError:
+        return None
+    except (json.JSONDecodeError, ValueError, OSError):
+        raise ValueError("data\\vault.json is damaged. Restore it from a backup, or delete the vault to start again.")
+
+
+def save_vault(body):
+    """Store a newly encrypted vault. body['base'] is the rev the browser last loaded, so an older window
+    cannot silently overwrite changes made in a newer one. Caller holds db_lock."""
+    new = clean_vault(body)
+    try:
+        cur = load_vault()
+    except ValueError:
+        cur = None                                   # a damaged file may be replaced by a fresh vault
+    base = body.get("base")
+    if (cur["rev"] if cur else 0) != base:
+        raise VaultConflict()
+    new["rev"] = (cur["rev"] if cur else 0) + 1
+    write_json(VAULT_FILE, new)
+    return new["rev"]
+
+
+class VaultConflict(Exception):
+    pass
+
+
+class SecretClipboard:
+    """Copy a vault value to the Windows clipboard the way password managers do: marked so it is NOT kept in
+    clipboard history (Win+V) or synced to the cloud clipboard, and emptied after a delay unless something else
+    was copied since. The value is only held in memory for the copy; it is never stored or logged."""
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.timer = None
+        self._u32 = self._k32 = None
+
+    def _libs(self):
+        if self._u32 is None:
+            vp, ui, b = ctypes.c_void_p, ctypes.c_uint, ctypes.c_bool
+            u32, k32 = ctypes.WinDLL("user32", use_last_error=True), ctypes.WinDLL("kernel32", use_last_error=True)
+            u32.CreateWindowExW.argtypes = [ctypes.c_uint32, ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32,
+                                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, vp, vp, vp, vp]
+            u32.CreateWindowExW.restype = vp
+            u32.DestroyWindow.argtypes, u32.DestroyWindow.restype = [vp], b
+            u32.OpenClipboard.argtypes, u32.OpenClipboard.restype = [vp], b
+            u32.CloseClipboard.argtypes, u32.CloseClipboard.restype = [], b
+            u32.EmptyClipboard.argtypes, u32.EmptyClipboard.restype = [], b
+            u32.SetClipboardData.argtypes, u32.SetClipboardData.restype = [ui, vp], vp
+            u32.RegisterClipboardFormatW.argtypes, u32.RegisterClipboardFormatW.restype = [ctypes.c_wchar_p], ui
+            u32.GetClipboardSequenceNumber.argtypes, u32.GetClipboardSequenceNumber.restype = [], ctypes.c_uint32
+            k32.GlobalAlloc.argtypes, k32.GlobalAlloc.restype = [ui, ctypes.c_size_t], vp
+            k32.GlobalLock.argtypes, k32.GlobalLock.restype = [vp], vp
+            k32.GlobalUnlock.argtypes, k32.GlobalUnlock.restype = [vp], b
+            k32.GlobalFree.argtypes, k32.GlobalFree.restype = [vp], vp
+            self._u32, self._k32 = u32, k32
+        return self._u32, self._k32
+
+    def _put(self, fmt, data):
+        u32, k32 = self._libs()
+        h = k32.GlobalAlloc(0x0002, len(data))               # GMEM_MOVEABLE: the clipboard owns it once set
+        if not h:
+            raise RuntimeError("Out of memory")
+        p = k32.GlobalLock(h)
+        ctypes.memmove(p, data, len(data))
+        k32.GlobalUnlock(h)
+        if not u32.SetClipboardData(fmt, h):
+            k32.GlobalFree(h)
+            return False
+        return True
+
+    def _open(self):
+        u32, _ = self._libs()
+        hwnd = u32.CreateWindowExW(0, "STATIC", None, 0, 0, 0, 0, 0, None, None, None, None)   # an owner, or SetClipboardData fails
+        for _ in range(20):                                   # another program may be using the clipboard for a moment
+            if u32.OpenClipboard(hwnd):
+                return hwnd
+            time.sleep(0.05)
+        u32.DestroyWindow(hwnd)
+        raise RuntimeError("The clipboard is busy. Try again.")
+
+    def _close(self, hwnd):
+        u32, _ = self._libs()
+        u32.CloseClipboard()
+        u32.DestroyWindow(hwnd)
+
+    def copy(self, text, clear_after):
+        with self.lock:
+            u32, _ = self._libs()
+            hwnd = self._open()
+            try:
+                u32.EmptyClipboard()
+                if not self._put(13, (text + "\0").encode("utf-16-le")):        # CF_UNICODETEXT
+                    raise RuntimeError("Could not copy to the clipboard")
+                zero = struct.pack("<I", 0)
+                for name in ("ExcludeClipboardContentFromMonitorProcessing",    # keep it out of Win+V history and cloud sync
+                             "CanIncludeInClipboardHistory", "CanUploadToCloudClipboard"):
+                    self._put(u32.RegisterClipboardFormatW(name), zero)
+            finally:
+                self._close(hwnd)
+            seq = u32.GetClipboardSequenceNumber()
+            if self.timer:
+                self.timer.cancel()
+            self.timer = threading.Timer(clear_after, self.clear, args=(seq,))
+            self.timer.daemon = True
+            self.timer.start()
+
+    def clear(self, seq=None):
+        """Empty the clipboard if it still holds what we copied (seq None: if a vault copy is still pending)."""
+        with self.lock:
+            if seq is None:
+                if not self.timer:
+                    return
+                self.timer.cancel()
+                seq = self.timer.args[0]
+            self.timer = None
+            u32, _ = self._libs()
+            if u32.GetClipboardSequenceNumber() != seq:      # you copied something else since: leave it alone
+                return
+            try:
+                hwnd = self._open()
+            except RuntimeError:
+                return
+            try:
+                u32.EmptyClipboard()
+            finally:
+                self._close(hwnd)
+
+
+CLIP = SecretClipboard()
+
+
 def build_backup():
     with db_lock:
         items, cats, notes, dividers = load_db(), load_cats(), load_notes(), load_dividers()
         commands, events = load_commands(), load_events()
+        try:
+            vault = load_vault()
+        except ValueError:
+            vault = None                             # a damaged vault is left out rather than failing the whole backup
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("manifest.json", json.dumps({
@@ -1189,6 +1363,8 @@ def build_backup():
         z.writestr("menu.json", json.dumps({"dividers": dividers}, indent=2))
         z.writestr("commands.json", json.dumps({"groups": commands}, indent=2))
         z.writestr("events.json", json.dumps({"events": events}, indent=2))
+        if vault:                                    # still encrypted: the backup cannot open it without the master password
+            z.writestr("vault.json", json.dumps(vault, indent=2))
         for it in items:
             icon = it.get("icon")
             if icon and ICON_NAME_RE.match(icon) and os.path.isfile(os.path.join(ICON_DIR, icon)):
@@ -1290,7 +1466,8 @@ def parse_backup(data):
                 break
     if found:
         sounds = found
-    return items, cats, icons, bg, notes, dividers, commands, events, sounds
+    vault = clean_vault(json.loads(z.read("vault.json"))) if "vault.json" in names else None
+    return items, cats, icons, bg, notes, dividers, commands, events, sounds, vault
 
 
 def wipe_icons():
@@ -1302,7 +1479,7 @@ def wipe_icons():
                 pass
 
 
-def apply_backup(items, cats, icons, bg=None, notes=None, dividers=None, commands=None, events=None, sounds=None):
+def apply_backup(items, cats, icons, bg=None, notes=None, dividers=None, commands=None, events=None, sounds=None, vault=None):
     with db_lock:
         wipe_icons()
         os.makedirs(ICON_DIR, exist_ok=True)
@@ -1322,6 +1499,13 @@ def apply_backup(items, cats, icons, bg=None, notes=None, dividers=None, command
             write_json(EVENTS_FILE, {"events": events})
         for k, blob in (sounds or {}).items():   # sounds the backup has replace yours; the ones it lacks are left alone
             save_sound(k, blob)
+        if vault is not None:        # a backup with a vault replaces yours (it opens with the master password it was saved with)
+            try:
+                cur = load_vault()
+            except ValueError:
+                cur = None
+            vault["rev"] = (cur["rev"] if cur else 0) + 1    # newer than anything an open window has loaded
+            write_json(VAULT_FILE, vault)
 
 
 def factory_reset():
@@ -1331,7 +1515,7 @@ def factory_reset():
         for k in SOUND_KINDS:
             remove_sound(k)
         NET.reset_config()                        # outage log and extra targets
-        for p in (DB_FILE, CAT_FILE, NOTES_FILE, MENU_FILE, COMMANDS_FILE, EVENTS_FILE):
+        for p in (DB_FILE, CAT_FILE, NOTES_FILE, MENU_FILE, COMMANDS_FILE, EVENTS_FILE, VAULT_FILE):
             if os.path.exists(p):
                 os.remove(p)
 
@@ -1618,6 +1802,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/notes":
             with db_lock:
                 return self.send_json(load_notes())
+        if path == "/api/vault":                     # the encrypted blob only; it is opened in the browser
+            try:
+                with db_lock:
+                    vault = load_vault()
+            except ValueError as e:
+                return self.send_json({"error": str(e), "damaged": True}, 500)
+            return self.send_json({"exists": True, **vault} if vault else {"exists": False})
         if path == "/api/version":
             return self.send_json({"version": current_version()})
         if path == "/api/menu":
@@ -1711,12 +1902,37 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if parts == ["api", "import"] and method == "POST":
                 try:
-                    items, cats, icons, bg, notes, dividers, commands, events, sounds = parse_backup(self.read_body(MAX_BACKUP_BYTES))   # validate everything first
+                    items, cats, icons, bg, notes, dividers, commands, events, sounds, vault = parse_backup(self.read_body(MAX_BACKUP_BYTES))   # validate everything first
                 except (zipfile.BadZipFile, KeyError, TypeError, AttributeError, OverflowError, RuntimeError):
                     raise ValueError("The backup file is damaged or not valid")
-                apply_backup(items, cats, icons, bg, notes, dividers, commands, events, sounds)
+                apply_backup(items, cats, icons, bg, notes, dividers, commands, events, sounds, vault)
                 return self.send_json({"shortcuts": len(items), "categories": len(cats), "background": bool(bg),
-                                       "notes": None if notes is None else len(notes)})
+                                       "notes": None if notes is None else len(notes), "vault": vault is not None})
+            if parts == ["api", "vault"] and method == "PUT":               # a newly encrypted vault from the browser
+                body = json.loads(self.read_body(MAX_VAULT_BYTES + 64 * 1024) or b"{}")
+                try:
+                    with db_lock:
+                        rev = save_vault(body if isinstance(body, dict) else {})
+                except VaultConflict:
+                    return self.send_json({"error": "The vault was changed in another window. Lock it and unlock it again "
+                                                    "to load the newest copy, then redo your change.", "conflict": True}, 409)
+                return self.send_json({"rev": rev})
+            if parts == ["api", "vault", "copy"] and method == "POST":      # copy one value, kept out of clipboard history
+                d = self.read_json()
+                text = d.get("text")
+                if not isinstance(text, str) or not text or len(text) > 10000:
+                    raise ValueError("Nothing to copy")
+                secs = clamp(d.get("clear"), 30, lo=5, hi=600)
+                CLIP.copy(text, secs)
+                return self.send_json({"ok": True, "clear": secs})
+            if parts == ["api", "vault", "clear-clipboard"] and method == "POST":   # on lock: empty it now if a copy is pending
+                CLIP.clear()
+                return self.send_json({"ok": True})
+            if parts == ["api", "vault"] and method == "DELETE":            # "forgot the master password": start again
+                with db_lock:
+                    if os.path.exists(VAULT_FILE):
+                        os.remove(VAULT_FILE)
+                return self.send_json({"ok": True})
             if parts == ["api", "category-order"] and method == "PUT":     # drag-and-drop: the whole new order
                 order = self.read_json().get("order")
                 with db_lock:
@@ -2074,6 +2290,10 @@ def power_off():
     """Close the dashboard window, then stop the server; run.bat's console ends with the process."""
     def work():
         time.sleep(0.4)             # let the HTTP response get out first
+        try:
+            CLIP.clear()            # a password copied from the vault does not outlive the app
+        except Exception:
+            pass
         close_dashboard_windows()
         if HTTPD:
             HTTPD.shutdown()
